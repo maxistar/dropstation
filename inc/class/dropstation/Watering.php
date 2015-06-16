@@ -11,6 +11,8 @@ class Watering {
         //$device = dropstation\model\Device::getItem($deviceId);
         if ($res->eof) return $this->formatError('Device not found');
         list($deviceId, $userId) = $res->fetch();
+        
+        Db::execute("update devices SET last_access=now() where id=?", $deviceId);
 
         //get users timezone
         $res = Db::execute("select timezone from users where id=?", $userId);
