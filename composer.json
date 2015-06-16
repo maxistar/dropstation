@@ -1,0 +1,14 @@
+{
+  "repositories":[
+    { "type": "composer", "url": "http://svn.ztools.org/composer/" }
+  ],
+  "require": {
+    "etherra/core":"dev-master",
+    "phpunit/phpunit": "~4.2"
+  },
+  "autoload": {
+    "psr-0": {
+      "": "inc/class/"
+    }
+  }
+}
