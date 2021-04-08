@@ -1,6 +1,6 @@
 {
   "repositories":[
-    { "type": "composer", "url": "http://svn.ztools.org/composer/" }
+    { "type": "git", "url": "git@github.com:maxistar/etherra-core.git" }
   ],
   "require": {
     "etherra/core":"dev-master",
