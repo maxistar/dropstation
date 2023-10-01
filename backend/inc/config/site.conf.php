@@ -3,11 +3,11 @@
 
 if (isset($_SERVER['SERVER_NAME'])){
     switch($_SERVER['SERVER_NAME']){
-        case 'dropstation.procyon':
-            include 'site.dev.conf.php';
+        case 'dropstation.x.maxistar.me':
+            include 'site.live.conf.php';
             break;
         default:
-            include 'site.live.conf.php';
+            include 'site.dev.conf.php';
     }
 }
 else {

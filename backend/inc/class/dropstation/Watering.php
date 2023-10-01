@@ -1,4 +1,4 @@
-<?
+<?php
 namespace dropstation;
 
 use \etherra\Db;

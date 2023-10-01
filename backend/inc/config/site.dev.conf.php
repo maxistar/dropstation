@@ -1,10 +1,11 @@
 <?php
 
 $data = array(
+    'site.dbhost' => 'db',
     'site.dbtype' => 'MySqli',
-    'site.dbname' => 'polivalka',
+    'site.dbname' => 'dropstation',
     'site.dbuser' => 'root',
-    'site.dbpassword' => 'maxmax256'
+    'site.dbpassword' => 'gotechnies'
 );
 self::set($data);
 

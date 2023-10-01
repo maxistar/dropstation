@@ -1,2 +1,3 @@
 .idea
-vendor
+backend/vendor
+backend/inc/config/site.live.conf.php
