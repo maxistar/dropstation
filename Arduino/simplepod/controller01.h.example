@@ -1,0 +1,14 @@
+/**
+ * controller 01 config file
+ * 
+ * the on that on Ilushuas Room
+ */
+ 
+#define WIFI_PASSWORD "secret"
+#define WIFI_NAME "networkname"
+#define SERVER_ADDRESS "http://dropstation.ztools.org/api/v2/watering/?device=sometoken"
+#define PUMP_PIN 12
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+
