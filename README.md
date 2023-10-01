@@ -26,5 +26,10 @@ install dependencies
 
 access device in browser: http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
 
+## Creating user in MySQL Database
+
+CREATE USER 'polivalka'@'localhost' IDENTIFIED BY "strongpassword";
+grant all privileges on dropstation.* to 'polivalka'@'localhost';
+
 
 [See more about this project(in russian)](http://maxistar.ru/projects/diy/watering/)
