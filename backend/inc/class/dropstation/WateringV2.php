@@ -39,7 +39,7 @@ class WateringV2 {
             }
 
             //check if it passed more than 20 hours since last watering
-            if (time() - $lastWatering < 20*60*60) {
+            if (time() - $lastWatering < 20 * 60 * 60) {
                 $results[$address] = 0;
                 continue;
             }
