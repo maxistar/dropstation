@@ -62,6 +62,7 @@ void setup() {
         USE_SERIAL.flush();
         delay(1000);
     }
+    // WiFi.mode(WIFI_ON);
     WiFiMulti.addAP(WIFI_NAME, WIFI_PASSWORD);
 }
 
@@ -69,7 +70,7 @@ void loop() {
     digitalWrite(PUMP_PIN, PUMP_OFF);
 
     bool ok = false;
-    StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
+    StaticJsonBuffer < JSON_BUFFER_SIZE> jsonBuffer;
 
     USE_SERIAL.printf("loop");
 
@@ -114,10 +115,10 @@ void loop() {
                       int t = it->value.as<int>();
                       Serial.println(t);
 
-                      if (t>0) {
+                      if (t > 0) {
                          digitalWrite(PUMP_PIN, PUMP_ON);
                          Serial.print("pump stared\n");
-                         delay(1000*t);
+                         delay(1000 * t);
                          digitalWrite(PUMP_PIN, PUMP_OFF);
                          Serial.print("pump stopped\n");
                       }
@@ -139,6 +140,9 @@ void loop() {
     //digitalWrite(LED_PIN, LED_OFF);   // turn the LED on (HIGH is the voltage level)
 
     //WiFi.mode(WIFI_OFF);
-    delay(10000);
+    digitalWrite(PUMP_PIN, PUMP_OFF);
+    delay(1000);
+    ESP.deepSleep(30e6); 
+    //ESP.restart();
 }
 
