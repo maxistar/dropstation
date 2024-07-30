@@ -33,3 +33,15 @@ grant all privileges on dropstation.* to 'polivalka'@'localhost';
 
 
 [See more about this project(in russian)](http://maxistar.ru/projects/diy/watering/)
+
+
+## Test Backend
+
+```shell
+curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":123, "humidity": 1234}' "http://192.168.0.40:1880/watering/controller04"
+
+```
+
+
+## Node Red
+

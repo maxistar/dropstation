@@ -7,7 +7,6 @@
 
 #include <Arduino.h>
 
-
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
@@ -20,35 +19,19 @@
 
 ESP8266WiFiMulti WiFiMulti;
 
-
-void hexToAddress(uint8_t *address, const char *hex)
-{
-    uint8_t result = 0;
-    int i,j;
-    for (j=0;j<8;j++) {
-      result = 0;
-      for (i=0;i<2;i++)
-      {
-        if (*hex > 47 && *hex < 58)
-          result += (*hex - 48);
-        else if (*hex > 64 && *hex < 71)
-          result += (*hex - 55);
-        else if (*hex > 96 && *hex < 103)
-          result += (*hex - 87);
-
-        if (i == 0) {
-          result <<= 4;
-        }
-        hex++;
-      }
-      address[j] = result;
-    }
-}
+int powerValue = 0;  // value read from the pot
+int humidityValue = 0;  // value read from the pot
+int t = 0;
+uint64_t interval = SLEEP_TIMEOUT;
+long int jsonInterval = 0;
 
 void setup() {
     pinMode(PUMP_PIN, OUTPUT);
+    pinMode(POWER_PIN, OUTPUT);
+    pinMode(HUMIDITY_PIN, OUTPUT);
     digitalWrite(PUMP_PIN, PUMP_OFF);   // turn the LED on (HIGH is the voltage level)
-
+    digitalWrite(POWER_PIN, LOW);
+    digitalWrite(HUMIDITY_PIN, LOW);
 
     USE_SERIAL.begin(115200);
    // USE_SERIAL.setDebugOutput(true);
@@ -68,6 +51,20 @@ void setup() {
 
 void loop() {
     digitalWrite(PUMP_PIN, PUMP_OFF);
+    
+    USE_SERIAL.print("read power");
+    digitalWrite(POWER_PIN, HIGH);
+    delay(1000);
+    powerValue = analogRead(A0);
+    digitalWrite(POWER_PIN, LOW);
+
+
+    USE_SERIAL.print("read humidity");
+    digitalWrite(HUMIDITY_PIN, HIGH);
+    delay(1000);
+    humidityValue = analogRead(A0);
+    digitalWrite(HUMIDITY_PIN, LOW);
+
 
     bool ok = false;
     StaticJsonBuffer < JSON_BUFFER_SIZE> jsonBuffer;
@@ -86,8 +83,19 @@ void loop() {
         http.begin(client, SERVER_ADDRESS); //HTTP
 
         USE_SERIAL.print("[HTTP] GET...\n");
+        http.addHeader("Content-Type", "application/json");
         // start connection and send HTTP header
-        int httpCode = http.GET();
+        // int httpCode = http.GET();
+        int httpCode = http.POST(
+            String(
+              "{\"nextCall\":") 
+              + String((int) (SLEEP_TIMEOUT / 1000000)) 
+              + String(", \"battery\": ") 
+              + String(powerValue)
+              + String(", \"humidity\": ")
+              + String(humidityValue)
+              + String("}")
+          );
 
         // httpCode will be negative on error
         if(httpCode > 0) {
@@ -106,28 +114,24 @@ void loop() {
                     root.printTo(Serial);
                     Serial.println("size:");
                     Serial.println(root.size());
-                    for (JsonObject::iterator it=root.begin(); it!=root.end(); ++it)
-                    {
-                      Serial.println("address:");
-                      Serial.println(it->key);
-                      
-                      Serial.println("value:");
-                      int t = it->value.as<int>();
-                      Serial.println(t);
-
-                      if (t > 0) {
-                         digitalWrite(PUMP_PIN, PUMP_ON);
-                         Serial.print("pump stared\n");
-                         delay(1000 * t);
-                         digitalWrite(PUMP_PIN, PUMP_OFF);
-                         Serial.print("pump stopped\n");
-                      }
-                    }
+                    
+                    t = root["watering"];
+                    jsonInterval = root["interval"];
+                    interval = jsonInterval;
+                    interval = interval * 1000000;
+                    
                 } else {
                   Serial.println("parseObject() failed");
                 }
 
-                
+                if (t > 0) {
+                    USE_SERIAL.printf("watering for %d seconds\n", t);
+                    digitalWrite(PUMP_PIN, PUMP_ON);
+                    Serial.print("pump stared\n");
+                    delay(1000 * t);
+                    digitalWrite(PUMP_PIN, PUMP_OFF);
+                    Serial.print("pump stopped\n");
+                }
             }
         } else {
             USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
@@ -141,8 +145,11 @@ void loop() {
 
     //WiFi.mode(WIFI_OFF);
     digitalWrite(PUMP_PIN, PUMP_OFF);
+    digitalWrite(POWER_PIN, LOW);
+    digitalWrite(HUMIDITY_PIN, LOW);
     delay(1000);
-    ESP.deepSleep(30e6); 
+    USE_SERIAL.printf("sleep for: %llu\n", interval);
+    ESP.deepSleep(interval); 
     //ESP.restart();
 }
 
