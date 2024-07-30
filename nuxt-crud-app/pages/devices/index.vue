@@ -15,26 +15,33 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useFetch } from '@nuxt3/vue';
+import { useFetch } from '#app';
 
+  
 const devices = ref([]);
 const router = useRouter();
-const { data } = await useFetch('/api/devices');
 
-onMounted(() => {
+const fetchDevices = async () => {
+  console.log("fetch devices");
+  const { data } = await useFetch('/api/devices');
   devices.value = data.value;
-});
+};
+
+// Fetch devices when the component is mounted
+onMounted(fetchDevices);
 
 const createDevice = () => {
   router.push('/devices/create');
 };
 
 const editDevice = (id: number) => {
-  router.push(`/devices/edit/${id}`);
+  router.push(`/devices/${id}/edit`);
 };
 
 const deleteDevice = async (id: number) => {
-  await $fetch(`/api/devices/delete?id=${id}`);
-  devices.value = devices.value.filter((device) => device.id !== id);
+  await $fetch(`/api/devices/delete?id=${id}`, {
+    method: 'DELETE',
+  });
+  fetchDevices();  // Fetch the updated list after deleting a device
 };
 </script>

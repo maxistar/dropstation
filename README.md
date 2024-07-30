@@ -36,6 +36,9 @@ access device in browser: http://localhost/api/v2/watering/?device=1a382ff4-5099
 CREATE USER 'polivalka'@'localhost' IDENTIFIED BY "strongpassword";
 grant all privileges on dropstation.* to 'polivalka'@'localhost';
 
+CREATE USER 'polivalka2'@'172.22.0.1' IDENTIFIED BY "strongpassword";
+grant all privileges on dropstation.* to 'polivalka2'@'172.22.0.1';
+
 
 [See more about this project(in russian)](http://maxistar.ru/projects/diy/watering/)
 
