@@ -15,16 +15,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useFetch } from '#app';
 
   
 const devices = ref([]);
 const router = useRouter();
 
 const fetchDevices = async () => {
-  console.log("fetch devices");
-  const { data } = await useFetch('/api/devices');
-  devices.value = data.value;
+  const data = await $fetch('/api/devices');
+  devices.value = data;
 };
 
 // Fetch devices when the component is mounted
