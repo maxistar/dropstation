@@ -26,6 +26,11 @@ install dependencies
 
 access device in browser: http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
 
+
+### Database access
+
+- there is phpmyadmin running on port 8080
+
 ## Creating user in MySQL Database
 
 CREATE USER 'polivalka'@'localhost' IDENTIFIED BY "strongpassword";

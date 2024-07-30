@@ -11,6 +11,7 @@ services:
        - phpmyadmin
     volumes:
       - ./backend:/var/www
+      
   db:
     image: mysql:5.7
     container_name: database_dropstation
