@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
         return { message: 'HTTP method not allowed' };
     }
 
-    const { id } = getQuery(event);
+    const { id } = event.context.params;
+
     const [rows] = await pool.query('SELECT * FROM devices WHERE id = ?', [id]);
     return rows[0];
 });
