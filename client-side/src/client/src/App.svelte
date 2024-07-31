@@ -6,11 +6,11 @@
 </script>
 
 <main>
-    <nav>
-        <!--<Link to="/">Home</Link>-->
-        <!--<Link to="/settings">Settings</Link>-->
-    </nav>
     <Router>
+		<nav>
+        <Link to="/">Home</Link>
+        <Link to="/settings">Settings</Link>
+    	</nav>
         <Route path="/" component={Index} />
         <Route path="/settings" component={Settings} />
     </Router>
