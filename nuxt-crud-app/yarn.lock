@@ -735,6 +735,16 @@
     semver "^7.3.5"
     tar "^6.1.11"
 
+"@mdi/font@^7.4.47":
+  version "7.4.47"
+  resolved "https://registry.yarnpkg.com/@mdi/font/-/font-7.4.47.tgz#2ae522867da3a5c88b738d54b403eb91471903af"
+  integrity sha512-43MtGpd585SNzHZPcYowu/84Vz2a2g31TvPMTm9uTiCSWzaheQySUcSyUH/46fPnuPQWof2yd0pGBtzee/IQWw==
+
+"@mdi/js@^7.4.47":
+  version "7.4.47"
+  resolved "https://registry.yarnpkg.com/@mdi/js/-/js-7.4.47.tgz#7d8a4edc9631bffeed80d1ec784f9beae559a76a"
+  integrity sha512-KPnNOtm5i2pMabqZxpUz7iQf+mfrYZyKCZ8QNz85czgEt7cuHcGorWfdzUMWYA0SD+a6Hn4FmJ+YhzzzjkTZrQ==
+
 "@netlify/functions@^2.8.0":
   version "2.8.1"
   resolved "https://registry.yarnpkg.com/@netlify/functions/-/functions-2.8.1.tgz#67cd94f929551e156225fb50d2efba603b97e138"
@@ -5550,6 +5560,11 @@ vue@^3.4.32, vue@latest:
     "@vue/runtime-dom" "3.4.34"
     "@vue/server-renderer" "3.4.34"
     "@vue/shared" "3.4.34"
+
+vuetify@^3.7.0-beta.1:
+  version "3.7.0-beta.1"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-3.7.0-beta.1.tgz#a3c58cf170fd44c17427555390e7b88c6d3602a4"
+  integrity sha512-F6a+pSG7dLrU28sGlR8r4WMuBsLMprOsDpaywGopNrGk351Hs4AAhx/y88ROGUEf28yAPShSM86bPnD30xNyDw==
 
 webidl-conversions@^3.0.0:
   version "3.0.1"

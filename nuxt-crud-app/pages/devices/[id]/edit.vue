@@ -1,22 +1,24 @@
 <template>
-  <div>
+  <v-container>
     <h1>Edit Device</h1>
-    <form @submit.prevent="updateDevice">
-      <div>
-        <label for="name">Name:</label>
-        <input type="text" v-model="name" id="name" required />
-      </div>
-      <div>
-        <label for="notes">Notes:</label>
-        <input type="text" v-model="notes" id="notes" />
-      </div>
-      <div>
-        <label for="deviceKey">Device Key:</label>
-        <input type="text" v-model="deviceKey" id="deviceKey" required />
-      </div>
-      <button type="submit">Update</button>
-    </form>
-  </div>
+    <v-form @submit.prevent="updateDevice">
+      <v-text-field
+          v-model="name"
+          label="Name"
+          required
+      ></v-text-field>
+      <v-text-field
+          v-model="notes"
+          label="Notes"
+      ></v-text-field>
+      <v-text-field
+          v-model="deviceKey"
+          label="Device Key"
+          required
+      ></v-text-field>
+      <v-btn type="submit" color="primary">Update</v-btn>
+    </v-form>
+  </v-container>
 </template>
 
 <script setup lang="ts">
