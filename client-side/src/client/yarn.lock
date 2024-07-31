@@ -512,6 +512,11 @@ supports-preserve-symlinks-flag@^1.0.0:
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
 
+svelte-routing@^2.13.0:
+  version "2.13.0"
+  resolved "https://registry.yarnpkg.com/svelte-routing/-/svelte-routing-2.13.0.tgz#d8215a55491e32203d4eaeda20b313dd257bdce7"
+  integrity sha512-/NTxqTwLc7Dq306hARJrH2HLXOBtKd7hu8nxgoFDlK0AC4SOKnzisiX/9m8Uksei1QAWtlAEdF91YphNM8iDMg==
+
 svelte@^3.55.0:
   version "3.59.2"
   resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.59.2.tgz#a137b28e025a181292b2ae2e3dca90bf8ec73aec"

@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../client/public')));
+app.use(express.static(path.join(__dirname, '../../src/client/public')));
 
 app.get('/api/status', (req, res) => {
     // Placeholder for device status
@@ -30,6 +30,10 @@ app.get('/api/settings', (req, res) => {
     res.json(settings);
 });
 
+// Serve the client application
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../src/client/public/index.html'));
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

@@ -53,3 +53,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":
 
 ## Node Red
 
+## Svelte
+
+/home/maxim/projects/dropstation/client-side/dist/client/public/index.html
+/home/maxim/projects/dropstation/client-side/src/client/public

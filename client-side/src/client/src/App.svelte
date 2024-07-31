@@ -1,30 +1,29 @@
+<!-- src/client/src/App.svelte -->
 <script>
-	export let name;
+    import { Router, Link, Route } from 'svelte-routing';
+    import Index from './routes/index.svelte';
+    import Settings from './routes/settings.svelte';
 </script>
 
 <main>
-	<h1>Hello {name}!</h1>
-	<p>Visit the <a href="https://svelte.dev/tutorial">Svelte tutorial</a> to learn how to build Svelte apps.</p>
+    <nav>
+        <Link to="/">Home</Link>
+        <Link to="/settings">Settings</Link>
+    </nav>
+    <Router>
+        <Route path="/" component={Index} />
+        <Route path="/settings" component={Settings} />
+    </Router>
 </main>
 
 <style>
-	main {
-		text-align: center;
-		padding: 1em;
-		max-width: 240px;
-		margin: 0 auto;
-	}
-
-	h1 {
-		color: #ff3e00;
-		text-transform: uppercase;
-		font-size: 4em;
-		font-weight: 100;
-	}
-
-	@media (min-width: 640px) {
-		main {
-			max-width: none;
-		}
-	}
+    nav {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    nav a {
+        text-decoration: none;
+        color: blue;
+    }
 </style>
