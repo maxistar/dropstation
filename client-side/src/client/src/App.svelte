@@ -7,8 +7,8 @@
 
 <main>
     <nav>
-        <Link to="/">Home</Link>
-        <Link to="/settings">Settings</Link>
+        <!--<Link to="/">Home</Link>-->
+        <!--<Link to="/settings">Settings</Link>-->
     </nav>
     <Router>
         <Route path="/" component={Index} />

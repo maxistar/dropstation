@@ -1,4 +1,3 @@
-<!-- src/client/src/routes/settings.svelte -->
 <script lang="ts">
     import { onMount } from 'svelte';
 
