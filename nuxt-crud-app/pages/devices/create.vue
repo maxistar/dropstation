@@ -2,15 +2,22 @@
   <v-container>
     <h1>Create Device</h1>
     <v-form @submit.prevent="createDevice">
-      <v-text-field
+      <TextFieldWithLabel
           v-model="name"
+          title="Name"
           label="Name"
           required
-      ></v-text-field>
+      ></TextFieldWithLabel>
+      <div class="text-field-title">
+        Notes
+      </div>
       <v-text-field
           v-model="notes"
           label="Notes"
       ></v-text-field>
+      <div class="text-field-title">
+        Device Key
+      </div>
       <v-text-field
           v-model="deviceKey"
           label="Device Key"

@@ -2,11 +2,12 @@
   <v-container>
     <h1>Edit Device</h1>
     <v-form @submit.prevent="updateDevice">
-      <v-text-field
+      <TextFieldWithLabel
           v-model="name"
+          title="Name"
           label="Name"
           required
-      ></v-text-field>
+      ></TextFieldWithLabel>
       <v-text-field
           v-model="notes"
           label="Notes"
