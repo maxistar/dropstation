@@ -24,6 +24,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useDeviceStore } from '~/stores/deviceStore';
+import { VContainer, VForm, VTextField, VBtn } from 'vuetify/components';
 
 const name = ref('');
 const notes = ref('');
@@ -31,19 +33,20 @@ const deviceKey = ref('');
 const router = useRouter();
 const route = useRoute();
 const id = route.params.id;
+const deviceStore = useDeviceStore();
 
 const fetchDevice = async () => {
-  const device = await $fetch(`/api/devices/${id}`);
-  name.value = device.name;
-  notes.value = device.notes;
-  deviceKey.value = device.device_key;
+  await deviceStore.fetchDevices();
+  const device = deviceStore.devices.find(device => device.id === Number(id));
+  if (device) {
+    name.value = device.name;
+    notes.value = device.notes;
+    deviceKey.value = device.device_key;
+  }
 };
 
 const updateDevice = async () => {
-  await $fetch('/api/devices/update', {
-    method: 'POST',
-    body: { id, name: name.value, notes: notes.value, deviceKey: deviceKey.value },
-  });
+  await deviceStore.updateDevice(Number(id), name.value, notes.value, deviceKey.value);
   router.push('/devices');
 };
 

@@ -24,17 +24,17 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useDeviceStore } from '~/stores/deviceStore';
+import { VContainer, VForm, VTextField, VBtn } from 'vuetify/components';
 
 const name = ref('');
 const notes = ref('');
 const deviceKey = ref('');
 const router = useRouter();
+const deviceStore = useDeviceStore();
 
 const createDevice = async () => {
-  await $fetch('/api/devices/create', {
-    method: 'POST',
-    body: { name: name.value, notes: notes.value, deviceKey: deviceKey.value },
-  });
+  await deviceStore.createDevice(name.value, notes.value, deviceKey.value);
   router.push('/devices');
 };
 </script>

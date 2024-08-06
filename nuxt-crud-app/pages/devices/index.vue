@@ -2,7 +2,7 @@
   <div>
     <h1>Devices</h1>
     <DeviceItem
-        v-for="device in devices"
+        v-for="device in deviceStore.devices"
         :key="device.id"
         :device="device"
         @edit="editDevice"
@@ -15,19 +15,22 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useDeviceStore } from '~/stores/deviceStore';
 import DeviceItem from '~/components/DeviceItem.vue';
 import { VBtn } from 'vuetify/components';
+import { storeToRefs } from 'pinia'
 
-const devices = ref([]);
 const router = useRouter();
+const deviceStore = useDeviceStore();
 
-const fetchDevices = async () => {
-  const { data } = await useFetch('/api/devices');
-  devices.value = data.value;
-};
+useAsyncData('devices', async () => await deviceStore.fetchDevices(), {
+  initialCache: false
+});
 
-// Fetch devices when the component is mounted
-onMounted(fetchDevices);
+// onMounted(async () => {
+//  await useAsyncData('user', () => deviceStore.fetchDevices().then(() => true))
+// });
+
 
 const createDevice = () => {
   router.push('/devices/create');
@@ -38,9 +41,6 @@ const editDevice = (id: number) => {
 };
 
 const deleteDevice = async (id: number) => {
-  await useFetch(`/api/devices/delete?id=${id}`, {
-    method: 'DELETE',
-  });
-  fetchDevices();  // Fetch the updated list after deleting a device
+  await deviceStore.deleteDevice(id);
 };
 </script>

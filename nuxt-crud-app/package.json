@@ -12,9 +12,11 @@
   "dependencies": {
     "@mdi/font": "^7.4.47",
     "@mdi/js": "^7.4.47",
+    "@pinia/nuxt": "^0.5.2",
     "mysql2": "^3.11.0",
-    "nuxt": "^3.12.4",
-    "vue": "latest",
+    "nuxt": "^3.0.0",
+    "pinia": "2.1.0",
+    "vue": "^3.4.35",
     "vuetify": "^3.7.0-beta.1"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
