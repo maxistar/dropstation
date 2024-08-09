@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "cypress": "^13.13.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   }
