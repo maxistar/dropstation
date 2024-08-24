@@ -57,6 +57,11 @@ curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":
 
 ```
 cd client-side
+yarn
+cd src/client
+yarn
+yarn build
+cd ../../
 npx tsc
 node dist/server/index.js
 ```
