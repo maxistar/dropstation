@@ -60,3 +60,37 @@ cd client-side
 npx tsc
 node dist/server/index.js
 ```
+
+## Sensor calibration
+
+### Humidity Calibration
+
+Measure value:
+
+- 100% - sensor in water
+- 0% - dry sensor
+
+k * Vx + V0 = Y
+
+k = 100  / (Vx1 - Vx0)
+V0 = 100 * Vx0 / (Vx0 - Vx1)
+
+
+### Voltage sensor calibration
+
+curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":123, "humidity": 1234}' "http://192.168.0.40:1880/watering/controller/voltagecalibration"
+
+
+table is in voltagecalibration.txt
+
+- Vmeasure - measured with voltmeter
+- Vout - measured in resistor devider
+- Vmeasure = Vout * k
+- k = Vmeasure / Vout 
+- example:
+  - Vout = 340
+  - Vmeasure = 3400
+  - k = 10
+
+
+### Transform HTML to C++ Strings
