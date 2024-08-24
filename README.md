@@ -94,3 +94,11 @@ table is in voltagecalibration.txt
 
 
 ### Transform HTML to C++ Strings
+
+
+### WebServer Mode
+
+- works 1 minute showing a web interface
+- web interface shows all basic parameters of the device and allows trigger watering
+- after one minute device goes slipping to 1 hour
+- sleep timeout can be deactivated by reloading the page

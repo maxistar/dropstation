@@ -4,8 +4,9 @@
 
 ESP8266WebServer server(80);
 
-void handleRoot()
+void WebServer::handleRoot()
 {
+    this->onMainPageLoad();
     int sec = millis() / 1000;
     int min = sec / 60;
     int hr = min / 60;
@@ -25,16 +26,26 @@ void handleRoot()
     <h1>Hello from ESP8266!</h1>\
     <p>Uptime: %02d:%02d:%02d</p>\
     <img src=\"/test.svg\" />\
-    <a href\"/water\">water</a>\
+    <a href=\"/water\" target=\"_blank\">water</a>\
   </body>\
 </html>",
                 hr, min % 60, sec % 60);
     server.send(200, "text/html", temp.c_str());
 }
 
-void handleWatering()
+void WebServer::setOnMainPageLoad(void (*callback)())
 {
-    // watering = true;
+    this->onMainPageLoad = callback;
+}
+
+void WebServer::setOnClickWatering(void (*callback)())
+{
+    this->onClickWatering = callback;
+}
+
+void WebServer::handleWatering()
+{
+    this->onClickWatering();
 }
 
 void handleNotFound()
@@ -78,9 +89,9 @@ void drawGraph()
 }
 
 void WebServer::setup() {
-    server.on("/", handleRoot);
+    server.on("/", [this]{this->handleRoot();});
     server.on("/test.svg", drawGraph);
-    server.on("/water", handleWatering);
+    server.on("/water", [this]{this->handleWatering();});
     server.on("/inline", []()
               { server.send(200, "text/plain", "this works as well"); });
     server.onNotFound(handleNotFound);

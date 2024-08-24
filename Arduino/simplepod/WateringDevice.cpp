@@ -10,17 +10,28 @@
 #include "controller01.h"
 
 #include "WebServer.h"
+#include "Timer.h"
 
 WebServer webServer;
 
+uint64_t interval = SLEEP_TIMEOUT;
 #define USE_SERIAL Serial
+
+
+Timer sleepingTimer(60000, []() {
+    delay(1000);
+    USE_SERIAL.printf("sleep for: %llu\n", interval);
+    ESP.deepSleep(interval);
+    ESP.restart();
+});
+
+
 #define JSON_BUFFER_SIZE 500
 
 int powerValue = 0;    // value read from the pot
 int powerValuePercent = 0;
 int humidityValue = 0; // value read from the pot
 int t = 0;
-uint64_t interval = SLEEP_TIMEOUT;
 long int jsonInterval = 0;
 bool watering = false;
 
@@ -74,12 +85,7 @@ void wateringSetup()
     digitalWrite(HUMIDITY_PIN, LOW);
 }
 
-void goSleeping() {
-    delay(1000);
-    USE_SERIAL.printf("sleep for: %llu\n", interval);
-    ESP.deepSleep(interval);
-    ESP.restart();
-}
+
 
 
 void wateringLoop()
@@ -181,7 +187,7 @@ void wateringLoop()
     digitalWrite(PUMP_PIN, PUMP_OFF);
     digitalWrite(POWER_PIN, LOW);
     digitalWrite(HUMIDITY_PIN, LOW);
-    goSleeping();
+    // goSleeping();
 }
 
 
@@ -193,18 +199,32 @@ void WateringDevice::setup() {
     USE_SERIAL.println();
     USE_SERIAL.println();
     USE_SERIAL.println();
+    
     wifiSetup();
 
     webServer.setup();
+
+    webServer.setOnClickWatering([]() {
+        watering = true;
+    });
+
+    webServer.setOnMainPageLoad([]() {
+        sleepingTimer.restart();
+    });
     
     wateringSetup();
+    sleepingTimer.start();
 }
 
 void WateringDevice::loop() {
     if (watering) {
+      USE_SERIAL.printf("start watering\n");
+      sleepingTimer.cancel();
       wateringLoop();
       watering = false;
+      sleepingTimer.start();
     }
     webServer.loop();
     MDNS.update();
+    sleepingTimer.loop();
 }
