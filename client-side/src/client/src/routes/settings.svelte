@@ -25,7 +25,7 @@
 
 <main>
     <h1>Settings</h1>
-    <form on:submit|preventDefault={saveSettings}>
+    <form on:submit|preventDefault={saveSettings} class="settings-form">
         <label>
             Sleep Duration (seconds):
             <input type="number" bind:value={settings.sleepDuration}>
@@ -49,3 +49,13 @@
         <button type="submit">Save Settings</button>
     </form>
 </main>
+
+<style>
+    .settings-form label {
+        display: flex;
+        justify-content: space-between;
+    }
+    .settings-form input {
+        width: 50%;
+    }
+</style>

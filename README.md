@@ -100,6 +100,10 @@ table is in voltagecalibration.txt
 
 ### Transform HTML to C++ Strings
 
+```shell
+cd client-side
+yarn build
+```
 
 ### WebServer Mode
 

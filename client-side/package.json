@@ -13,5 +13,11 @@
     "cypress": "^13.13.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "tsc",
+    "generate": "node dist/server/generate.js",
+    "start": "node dist/server/index.js",
+    "test": "cypress run"
   }
 }

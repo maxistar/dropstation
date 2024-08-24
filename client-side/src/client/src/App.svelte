@@ -7,16 +7,23 @@
 
 <main>
     <Router>
-		<nav>
-        <Link to="/">Home</Link>
-        <Link to="/settings">Settings</Link>
-    	</nav>
+        <nav>
+            <Link to="/">Home</Link>
+            <Link to="/settings">Settings</Link>
+        </nav>
+        <div class="main">
         <Route path="/" component={Index} />
         <Route path="/settings" component={Settings} />
+        </div>
     </Router>
 </main>
 
 <style>
+    
+    .main {
+        width: 800px;
+        margin: 0 auto;
+    }
     nav {
         display: flex;
         gap: 1rem;
