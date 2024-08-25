@@ -6,10 +6,15 @@
           <nav>
             <nuxt-link to="/">Home</nuxt-link>
             <nuxt-link to="/devices">Devices</nuxt-link>
+            <nuxt-link to="/capacitors">Capacitors</nuxt-link>
+            <nuxt-link to="/places">Places</nuxt-link>
+            <nuxt-link to="/points">Points</nuxt-link>
           </nav>
         </header>
         <main>
-          <NuxtPage />
+          <div class="main">
+            <NuxtPage />
+          </div>
         </main>
       </div>
     </v-main>
@@ -23,6 +28,10 @@ import { VApp, VMain } from 'vuetify/components';
 <style scoped>
 header {
   background-color: #333;
+  padding: 1rem;
+}
+
+.main {
   padding: 1rem;
 }
 
