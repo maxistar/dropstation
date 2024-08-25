@@ -8,6 +8,7 @@ private:
     void (*onMainPageLoad)() = NULL;
     void (*onClickWatering)() = NULL;
     void handleWatering();
+    void handleStatus();
     void handleRoot();
 public:
     void setup();
