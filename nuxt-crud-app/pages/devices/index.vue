@@ -8,7 +8,7 @@
         @edit="editDevice"
         @delete="deleteDevice"
     />
-    <v-btn @click="createDevice" color="primary">Create Device</v-btn>
+    <v-btn @click="createDevice" color="primary"><v-icon icon="mdi-pen-plus" /> Create Device</v-btn>
   </div>
 </template>
 

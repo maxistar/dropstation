@@ -4,8 +4,8 @@
       {{ device.name }}
     </v-card-text>
     <v-card-actions class="device-actions">
-      <v-btn @click="$emit('edit', device.id)" color="primary">Edit</v-btn>
-      <v-btn @click="showConfirmDialog" color="error">Delete</v-btn>
+      <v-btn @click="$emit('edit', device.id)" color="primary"><v-icon icon="mdi-pencil" /> Edit</v-btn>
+      <v-btn @click="showConfirmDialog" color="error"><v-icon icon="mdi-delete" /> Delete</v-btn>
     </v-card-actions>
 
     <ConfirmationDialog

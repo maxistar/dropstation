@@ -4,7 +4,7 @@
       <div>
         <header>
           <nav>
-            <nuxt-link to="/">Home</nuxt-link>
+            <nuxt-link to="/"><v-icon icon="mdi-home" /> Home</nuxt-link>
             <nuxt-link to="/devices">Devices</nuxt-link>
             <nuxt-link to="/capacitors">Capacitors</nuxt-link>
             <nuxt-link to="/places">Places</nuxt-link>
