@@ -2,7 +2,7 @@
   <div>
     <h1>Places</h1>
     <DeviceItem
-        v-for="device in deviceStore.devices"
+        v-for="device in deviceStore.places"
         :key="device.id"
         :device="device"
         @edit="editDevice"
@@ -22,7 +22,7 @@ import { storeToRefs } from 'pinia'
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('devices', async () => await deviceStore.fetchDevices(), {
+useAsyncData('places', async () => await deviceStore.fetchPlaces(), {
   initialCache: false
 });
 </script>

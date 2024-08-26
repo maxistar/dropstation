@@ -1,8 +1,8 @@
 <template>
   <div>
     <h1>Capacitors</h1>
-    <DeviceItem
-        v-for="device in deviceStore.devices"
+    <CapacitorItem
+        v-for="device in deviceStore.capacitors"
         :key="device.id"
         :device="device"
         @edit="editDevice"
@@ -18,11 +18,12 @@ import { useDeviceStore } from '~/stores/deviceStore';
 import DeviceItem from '~/components/DeviceItem.vue';
 import { VBtn } from 'vuetify/components';
 import { storeToRefs } from 'pinia'
+import CapacitorItem from "~/components/CapacitorItem.vue";
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('devices', async () => await deviceStore.fetchDevices(), {
+useAsyncData('capacitors', async () => await deviceStore.fetchCapacitors(), {
   initialCache: false
 });
 
