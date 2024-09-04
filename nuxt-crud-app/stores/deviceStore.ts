@@ -1,12 +1,43 @@
 import { defineStore } from 'pinia';
-import {ref} from 'vue';
+
+// Define the types for your state
+interface Device {
+    id: number;
+    name: string;
+    // Add other fields as needed
+}
+
+interface Capacitor {
+    id: number;
+    type: string;
+    // Add other fields as needed
+}
+
+interface Place {
+    id: number;
+    location: string;
+    // Add other fields as needed
+}
+
+interface Point {
+    id: number;
+    value: string;
+    // Add other fields as needed
+}
+
+interface DeviceStoreState {
+    devices: Device[];
+    capacitors: Capacitor[];
+    places: Place[];
+    points: Point[];
+}
 
 export const useDeviceStore = defineStore('deviceStore', {
-    state: () => ({
-        devices: [],
-        capacitors: [],
-        places: [],
-        points: [],
+    state: ():  DeviceStoreState => ({
+        devices: [] as Device[],
+        capacitors: [] as Capacitor[],
+        places: [] as Place[],
+        points: [] as Point[],
     }),
     getters: {
         getDevices:(state) => state.devices,
@@ -16,25 +47,25 @@ export const useDeviceStore = defineStore('deviceStore', {
     },
     actions: {
         async fetchDevices () {
-            const data  = await $fetch('/api/devices');
+            const data  = await $fetch<Device[]>('/api/devices');
             this.devices = data;
             return data;
         },
 
         async fetchCapacitors () {
-            const data  = await $fetch('/api/capacitors');
+            const data  = await $fetch<Capacitor[]>('/api/capacitors');
             this.capacitors = data;
             return data;
         },
 
         async fetchPlaces () {
-            const data  = await $fetch('/api/places');
+            const data  = await $fetch<Place[]>('/api/places');
             this.places = data;
             return data;
         },
 
         async fetchPoints () {
-            const data  = await $fetch('/api/points');
+            const data  = await $fetch<Point[]>('/api/points');
             this.points = data;
             return data;
         },

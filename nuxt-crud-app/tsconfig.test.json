@@ -1,6 +1,4 @@
 {
-  // https://nuxt.com/docs/guide/concepts/typescript
-  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
@@ -19,7 +17,6 @@
       "~/*": ["./*"]
     }
   },
+  "include": ["tests/**/*"],
   "exclude": ["node_modules", ".nuxt", "dist"]
-  // "exclude": ["tests"]
 }
-
