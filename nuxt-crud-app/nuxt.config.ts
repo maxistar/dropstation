@@ -7,7 +7,8 @@ export default defineNuxtConfig({
     transpile: ['vuetify'],
   },
   modules: [
-    '@pinia/nuxt',      
+    '@pinia/nuxt',
+    '@nuxt/test-utils/module'  
   ],
   pinia: {
     storesDirs: ['./stores/**'],
