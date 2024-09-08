@@ -1,0 +1,37 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`AppNumber > match snapshot 1`] = `
+"<div data-v-3c7a1c45="" class="v-card v-theme--light v-card--density-default v-card--variant-elevated device-item">
+  <!---->
+  <div class="v-card__loader">
+    <div class="v-progress-linear v-theme--light v-locale--is-ltr" style="top: 0px; height: 0px; --v-progress-linear-height: 2px;" role="progressbar" aria-hidden="true" aria-valuemin="0" aria-valuemax="100">
+      <!---->
+      <div class="v-progress-linear__background" style="opacity: NaN;"></div>
+      <div class="v-progress-linear__buffer" style="opacity: NaN; width: 0%;"></div>
+      <transition-stub name="fade-transition" appear="false" persisted="false" css="true">
+        <div class="v-progress-linear__indeterminate">
+          <div class="v-progress-linear__indeterminate long"></div>
+          <div class="v-progress-linear__indeterminate short"></div>
+        </div>
+      </transition-stub>
+      <!---->
+    </div>
+  </div>
+  <!---->
+  <!---->
+  <div data-v-3c7a1c45="" class="v-card-text device-info">1! </div>
+  <div data-v-3c7a1c45="" class="v-card-actions device-actions"><button data-v-3c7a1c45="" type="button" class="v-btn v-btn--slim v-theme--light text-primary v-btn--density-default v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span>
+      <!----><span class="v-btn__content" data-no-activator="">Edit</span>
+      <!---->
+      <!---->
+    </button><button data-v-3c7a1c45="" type="button" class="v-btn v-btn--slim v-theme--light text-error v-btn--density-default v-btn--size-default v-btn--variant-text"><span class="v-btn__overlay"></span><span class="v-btn__underlay"></span>
+      <!----><span class="v-btn__content" data-no-activator="">Delete</span>
+      <!---->
+      <!---->
+    </button></div>
+  <!---->
+  <!---->
+  <!---->
+  <!----><span class="v-card__underlay"></span>
+</div>"
+`;

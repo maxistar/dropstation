@@ -7,4 +7,9 @@ describe('AppNumber', () => {
         const component = await mountSuspended(CapacitorItem,  {props: {device: {id:'1'}}})
         expect(component.html()).toContain('v-btn');
     })
+
+    it('match snapshot', async () => {
+        const component = await mountSuspended(CapacitorItem,  {props: {device: {id:'1'}}})
+        expect(component.html()).toMatchSnapshot();
+    })
 })
