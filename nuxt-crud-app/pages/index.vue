@@ -14,16 +14,19 @@
 
 
 <script setup lang="ts">
+
 import {definePageMeta, useAuth} from "#imports";
+import {addRouteMiddleware, defineNuxtPlugin, navigateTo, useCookie} from '#app'
 
 const { signOut, user } = await useAuth();
 
 definePageMeta({
   middleware: ["auth"]
 })
+console.log('!!!')
 
-if (!user) {
-  navigateTo('/login')
-}
+if (!user.value) {
+  navigateTo('/login/')
+} 
 
 </script>

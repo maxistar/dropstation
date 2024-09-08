@@ -1,4 +1,5 @@
 <script setup lang="ts">
+
 import {definePageMeta, useAuth} from "#imports";
 
 const {signIn} = await useAuth();
@@ -6,6 +7,7 @@ const {signIn} = await useAuth();
 definePageMeta({
   middleware: ["auth"]
 })
+ 
 </script>
 
 <template>

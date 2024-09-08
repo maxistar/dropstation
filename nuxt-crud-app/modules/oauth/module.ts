@@ -48,30 +48,32 @@ const defaults: ModuleOptions = {
 
 export default defineNuxtModule<ModuleOptions>({
     meta: {
-        name: '@bitinflow/nuxt-oauth',
+        name: '@maxistar/nuxt-oauth',
         configKey: 'oauth'
     },
     defaults,
     setup(moduleOptions, nuxt) {
+        
         const resolver = createResolver(import.meta.url)
 
         const options = defu(moduleOptions, {
             ...defaults
         })
-
-        // Set up runtime configuration
-        nuxt.options.runtimeConfig = nuxt.options.runtimeConfig || {public: {}}
-        nuxt.options.runtimeConfig.oauth = defu(nuxt.options.runtimeConfig.oauth, {
-            ...options
-        })
-        nuxt.options.runtimeConfig.public.oauth = defu(nuxt.options.runtimeConfig.public.oauth, {
-            ...options
-        })
-
-        // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
-        addPlugin(resolver.resolve('./runtime/plugin'))
-
-        const composables = resolver.resolve('./runtime/composables')
-        addImportsDir(composables)
+        
+                // Set up runtime configuration
+                nuxt.options.runtimeConfig = nuxt.options.runtimeConfig || {public: {}}
+                nuxt.options.runtimeConfig.oauth = defu(nuxt.options.runtimeConfig.oauth, {
+                    ...options
+                })
+                nuxt.options.runtimeConfig.public.oauth = defu(nuxt.options.runtimeConfig.public.oauth, {
+                    ...options
+                })
+        
+                // Do not add the extension since the `.ts` will be transpiled to `.mjs` after `npm run prepack`
+                addPlugin(resolver.resolve('./runtime/plugin'))
+        
+                const composables = resolver.resolve('./runtime/composables')
+                addImportsDir(composables)
+                
     }
 })

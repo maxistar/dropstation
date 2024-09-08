@@ -73,6 +73,7 @@ export default defineNuxtPlugin(() => {
     }
 
     addRouteMiddleware('auth', async (to) => {
+        
         const {user, authConfig, setBearerToken, setRefreshToken} = await useAuth()
 
         if (to.path === authConfig.redirect.callback || to.path === authConfig.redirect.callback + '/') {
@@ -92,16 +93,8 @@ export default defineNuxtPlugin(() => {
             return
         }
 
-        if (user.value === undefined) {
-            return navigateTo(authConfig.redirect.login, { external: true })
-        }
-    })
-
-    addRouteMiddleware('guest', async () => {
-        const {user, authConfig} = await useAuth()
-
-        if (user.value !== undefined) {
-            return navigateTo(authConfig.redirect.home, { external: true })
-        }
+        //if (user.value === undefined) {
+        //    return navigateTo(authConfig.redirect.login, { external: true })
+        //} 
     })
 })
