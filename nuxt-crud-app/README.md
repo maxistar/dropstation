@@ -45,11 +45,13 @@ yarn vitest
 - todo
   - ✓ create a new starter `npx nuxi@latest init nuxt-crud-app-vitest`
   - ✓ create a new project that looks like one from video
-  - transform project from video to the mine project
+  - ✓ transform project from video to the mine project
     - ✓ add vuetify 
-    - add pinia
-    - add code with crud
-
+    - ✓ add pinia
+    - ✓ add code with crud
+  - add authentication
+    - move module
+    - make it functionable
 
 
 
