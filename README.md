@@ -111,3 +111,22 @@ yarn build
 - web interface shows all basic parameters of the device and allows trigger watering
 - after one minute device goes slipping to 1 hour
 - sleep timeout can be deactivated by reloading the page
+
+### Road Map
+
+- mobile applications
+  - ios application
+  - android application
+- serve side application
+- web service
+- hardware
+  - develop PCB
+  - create several variants of device
+
+
+
+- testing strategies
+  - cover firmware with unit tests
+  - cover firmware with interactive tests
+  - cover server side with unit tests
+  - figure out end2end tests
