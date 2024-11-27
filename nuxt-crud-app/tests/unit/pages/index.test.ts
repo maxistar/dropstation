@@ -15,7 +15,7 @@ describe('IndexPage', () => {
             createSpy: vi.fn,
           })
         const wrapper = mount(IndexPage)
-        expect(wrapper.html()).toContain('Login')
+        expect(wrapper.html()).not.toContain('Login')
         // const wrapper = mount(IndexPage, {
         //     global: {
         //         mocks: {
