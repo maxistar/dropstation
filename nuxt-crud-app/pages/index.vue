@@ -2,10 +2,10 @@
   <div>
     <h1>Home Page</h1>
 
-    <div v-if="user">
-      Hello {{ user.data.first_name }}
+    <div v-if="authStore.loggedIn">
+      Hello "dfdfdfd"
 
-      <v-btn @click="signOut">
+      <v-btn @click="authStore.logout">
         Sign Out
       </v-btn>
     </div>
@@ -15,18 +15,20 @@
 
 <script setup lang="ts">
 
-import {definePageMeta, useAuth} from "#imports";
+import {definePageMeta, useAuthStore} from "#imports";
 import {addRouteMiddleware, defineNuxtPlugin, navigateTo, useCookie} from '#app'
 
-const { signOut, user } = await useAuth();
+// const { signOut, user } = await useAuth();
+
+const authStore = useAuthStore()
 
 definePageMeta({
-  middleware: ["auth"]
+    middleware: ["auth"]
 })
 console.log('!!!')
 
-if (!user.value) {
-  navigateTo('/login/')
+if (!authStore.loggedIn) {
+    navigateTo('/login/')
 } 
 
 </script>

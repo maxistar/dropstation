@@ -1,3 +1,4 @@
+import { useAuthStore } from "#imports";
 import {CookieRef, navigateTo, useCookie, useRuntimeConfig} from "#app";
 import {ModuleOptions} from "../../module";
 import {generateRandomString, getChallengeFromVerifier} from "../support";

@@ -2,6 +2,7 @@ import {addRouteMiddleware, defineNuxtPlugin, navigateTo, useCookie} from '#app'
 import useAuth from "./composables/useAuth"
 import {RouteLocationNormalized} from "vue-router";
 import {ModuleOptions} from "../module";
+import { useAuthStore } from "#imports";
 
 interface AccessToken {
     access_token: string,
@@ -25,6 +26,7 @@ export default defineNuxtPlugin(() => {
             const expires = hashParams.get('expires_in') as string;
 
             await setBearerToken(token, tokenType, parseInt(expires));
+            // useAuthStore().setLoggedIn(true)
             return navigateTo(authConfig.redirect.home, { external: true })
         }
     }
