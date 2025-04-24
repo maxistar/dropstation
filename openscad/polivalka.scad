@@ -1,4 +1,4 @@
-$fn=180;
+$fn=150;
 battery_18500_length = 50;
 battery_18500_radius = 9;
 battery_18500_button_height = 3;
@@ -13,7 +13,7 @@ pot_inner_height = 5;
 
 
 
-body_height = 80;
+body_height = 85;
 body_width = 30;
 body_depth = 25;
 
@@ -21,7 +21,7 @@ body_roundness = 10;
 body_thickness = 2;
 
 body_y_offset = 63;
-body_z_offset = 96;
+body_z_offset = 100;
 
 body_lid_mask_size = 100;
 
@@ -36,6 +36,13 @@ lid_gap = 0.4;
 
 top_lid_z_offset = 26;
 
+
+    clack_width = 5;
+    clack_height = 2;
+    clack_length = 15;
+    
+    clack_spere_radus = 1.1;
+
 module body_outer_outline(outer_offset=0) {
     minkowski() {
       sphere(body_roundness + outer_offset);
@@ -47,10 +54,8 @@ module body_outline_p(outer_offset=0, inner_offset=0) {
     difference() {
         body_outer_outline(outer_offset);
         
-        minkowski() {
-            sphere(body_roundness - body_thickness + inner_offset);
-            cube([body_width, body_depth, body_height-body_roundness*2], center=true);
-        }
+        body_outer_outline(outer_offset=- body_thickness + inner_offset);
+        
     }
 }
 
@@ -191,8 +196,15 @@ module body() {
   translate([14,body_y_offset+5,body_z_offset-body_height/2])
     //translate
     cylinder(r=2.5, h=10, center=true);
+
+
+  translate([0,body_y_offset,body_z_offset])
+  translate([0, body_depth - clack_length + clack_spere_radus, -body_height/2 +clack_spere_radus+body_thickness-0.7])
+      sphere(r=clack_spere_radus+lid_gap);
         
   }
+  
+
   
 
     
@@ -248,19 +260,24 @@ module lid_inner() {
     }    
 }
 
-module lid() {
+module side_lid() {
     lid_outer();
     lid_inner();
     
-    clack_width = 5;
-    clack_height = 2;
-    clack_length = 15;
-    
-    translate([0,cut_y_offset+2, -body_height/2+body_thickness+lid_gap*2+0.7])
-    cube([clack_width,clack_length-6,clack_height], center = true);
 
+
+    // vertical clack    
+    translate([0,cut_y_offset+2, -body_height/2+body_thickness+lid_gap*2+0.7])
+      cube([clack_width,clack_length-6,clack_height], center = true);
+
+    // horizontal clack
     translate([7, body_depth-body_thickness-lid_gap*2-2.6, cut_z_offset-5])
-    cube([clack_width,clack_height,clack_length], center = true);
+      cube([clack_width,clack_height,clack_length], center = true);
+    
+    translate([0, body_depth - clack_length + clack_spere_radus, -body_height/2 +clack_spere_radus+body_thickness-0.4])
+      sphere(r=clack_spere_radus);
+
+
 
 }
 
@@ -380,19 +397,18 @@ union() {
 }
 }
 
-body_combined();
+//body_combined();
 
 
-translate([0,body_y_offset,body_z_offset + 30])
-  top_lid();
-
-
-// battery holder
+//translate([0,body_y_offset,body_z_offset + 30])
+//  top_lid();
 
 
 
-translate([0,body_y_offset+30,body_z_offset])
-  lid();
+
+
+//translate([0,body_y_offset+30,body_z_offset])
+  side_lid();
 
 
 // ody_outer_outline_half();
@@ -400,10 +416,9 @@ translate([0,body_y_offset+30,body_z_offset])
 //components
 
 
-
+/*
 translate([13,70,95]) 
-//
-rotate([0,180,180])
-  pumpe();
-
+  rotate([0,180,180])
+    pumpe();
+*/
 
