@@ -1,4 +1,4 @@
-$fn=150;
+$fn=50;
 battery_18500_length = 50;
 battery_18500_radius = 9;
 battery_18500_button_height = 3;
@@ -80,7 +80,7 @@ module body_inner_outline_top_lid() {
             cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
     }
     
-    top_lid_clack_spheres();
+    top_lid_clack_spheres(-thickness_lid_gap);
 }
 
 module top_lid_clack_spheres(radius_offset = 0) {
@@ -110,7 +110,7 @@ module top_lid() {
         translate([0, 0, -body_lid_mask_size/2+top_lid_z_offset+lid_gap])
             cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
         
-        top_lid_clack_spheres(thickness_lid_gap);
+        top_lid_clack_spheres();
     }
     
     // thick part
@@ -449,15 +449,13 @@ union() {
 body_combined();
 
 
-//translate([0,body_y_offset,body_z_offset + 30])
-  //top_lid();
+translate([0,body_y_offset,body_z_offset + 15])
+  top_lid();
 
 
 
-
-
-//translate([0,body_y_offset+30,body_z_offset])
-  //side_lid();
+translate([0,body_y_offset+60,body_z_offset])
+  side_lid();
 
 
 // ody_outer_outline_half();
@@ -465,9 +463,9 @@ body_combined();
 //components
 
 
-/*
+
 translate([13,70,95]) 
   rotate([0,180,180])
     pumpe();
-*/
+
 
