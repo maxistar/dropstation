@@ -1,4 +1,5 @@
 $fn=50;
+
 battery_18500_length = 50;
 battery_18500_radius = 9;
 battery_18500_button_height = 3;
@@ -11,10 +12,8 @@ pot_width = 8;
 pot_inner_height = 5;
 
 
-
-
 body_height = 85;
-body_width = 30;
+body_width = 35;
 body_depth = 23;
 
 body_roundness = 10;
@@ -28,24 +27,33 @@ body_lid_mask_size = 100;
 
 small_offset = 0.01;
 
-  cut_y_offset = 9;
-  cut_z_offset = 20;
-  clack_offset = 5;  
+ 
   
 lid_gap = 0.4;
+lid_side_gap = 1.0;
 thickness_lid_gap = 0.2;
 
 
 top_lid_z_offset = 26;
 
+clack_width = 5;
+clack_height = 1.5;
+clack_length = 15;
+clack_offset = 5; 
+cut_y_offset =10;
+cut_z_offset = 15;
 
-    clack_width = 5;
-    clack_height = 1.5;
-    clack_length = 15;
+
     
-    horizontal_clack_length = clack_length-6;
+horizontal_clack_length = clack_length-6;
     
-    clack_spere_radus = 1.1;
+clack_spere_radus = 1.1;
+    
+tube_radius = 3;
+
+// todo
+// add clacks
+// tune gaps
 
 module body_outer_outline(outer_offset=0) {
     minkowski() {
@@ -107,7 +115,7 @@ module top_lid() {
     difference() {
         body_outline_p(inner_offset=body_thickness/2+thickness_lid_gap/2);    
     
-        translate([0, 0, -body_lid_mask_size/2+top_lid_z_offset+lid_gap])
+        translate([0, 0, -body_lid_mask_size/2 + top_lid_z_offset + lid_gap])
             cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
         
         top_lid_clack_spheres();
@@ -125,9 +133,9 @@ module top_lid() {
 module body_outer_outline_half() {
     
     difference() {        
-        body_outline_p(outer_offset =- body_thickness/2 - thickness_lid_gap/2);        
-        translate([0,-body_lid_mask_size/2,0])
-            cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
+        body_outline_p(inner_offset = body_thickness/2 + thickness_lid_gap/2);        
+        translate([0, -body_lid_mask_size/2, 0])
+            cube([body_lid_mask_size, body_lid_mask_size, body_lid_mask_size], center = true);
     }
 }
 
@@ -137,18 +145,14 @@ module body_hollow_outline() {
   
     body_outline_p();
     
-    translate([0,body_lid_mask_size/2+cut_y_offset,-body_lid_mask_size/2+cut_z_offset ])
-    
-    body_lid_cut();
+    translate([0, body_lid_mask_size/2 + cut_y_offset - clack_offset, -body_lid_mask_size/2 + cut_z_offset + clack_offset ])     
+      body_lid_cut();
   }  
 }
 
 module body_lid_cut() {
     cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
 }
-
-
-
 
 
 module pot_inner() {
@@ -185,23 +189,24 @@ module body_inner() {
 
 
 module body_with_size_cut() {
-    union() {  
-  difference() {
-      translate([0,body_y_offset,body_z_offset])
+  union() {  
+    difference() {
+      translate([0, body_y_offset, body_z_offset])
           body_hollow_outline();
       pot();
-  }
-  
-  
-  // botton cut  
-  difference() {
-    translate([0,body_y_offset,body_z_offset]) {
-        body_outer_outline_half();
     }
-    translate([0,body_y_offset,body_z_offset])
-        translate([0,body_lid_mask_size/2+cut_y_offset+clack_offset,-body_lid_mask_size/2+cut_z_offset-clack_offset ])
-      body_lid_cut();
-  } 
+  
+  
+    // botton cut  
+    difference() {
+      translate([0, body_y_offset, body_z_offset]) {
+        body_outer_outline_half();
+      }
+      translate([0, body_y_offset, body_z_offset])
+        translate([0, body_lid_mask_size/2 + cut_y_offset, -body_lid_mask_size/2 + cut_z_offset ])
+          body_lid_cut();
+    }
+     
   }
 }
 
@@ -214,25 +219,21 @@ module body() {
     body_with_size_cut();
   
   
-  translate([0,body_y_offset,body_z_offset+top_lid_z_offset])
-    translate([0,0,body_lid_mask_size/2])
-      cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
+  translate([0, body_y_offset, body_z_offset + top_lid_z_offset])
+    translate([0, 0, body_lid_mask_size / 2])
+      cube([body_lid_mask_size, body_lid_mask_size, body_lid_mask_size], center = true);
 
   // tube for water input
-  translate([14,body_y_offset+5,body_z_offset-body_height/2])
+  translate([14,body_y_offset+1,body_z_offset-body_height/2])
     //translate
-    cylinder(r=2.5, h=10, center=true);
+    cylinder(r=tube_radius, h=10, center=true);
 
 
-  translate([0,body_y_offset,body_z_offset])
-      translate([0,cut_y_offset+3, -body_height/2+body_thickness+lid_gap*2+0.8])
-        side_lid_horizontal_clack_sphere(lid_gap);
-        
+  //translate([0,body_y_offset,body_z_offset])
+  //    translate([0,cut_y_offset+3, -body_height/2+body_thickness+lid_gap*2+0.8])
+  //      side_lid_horizontal_clack_sphere(lid_gap);    
   }
   
-
-  
-
     
   translate([0,body_y_offset,body_z_offset])
     body_inner_outline_top_lid();
@@ -244,22 +245,22 @@ module body() {
 module side_body_outer_outline_half_lid() {
 
      difference() {
-        body_outline_p(inner_offset=body_thickness/2+thickness_lid_gap/2);    
+        body_outline_p(inner_offset = body_thickness/2 + thickness_lid_gap/2);    
 
         // cutting cube
-        translate([0,-body_lid_mask_size/2,0])
-            cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
+        translate([0, -body_lid_mask_size/2, 0])
+            cube([body_lid_mask_size, body_lid_mask_size, body_lid_mask_size], center = true);
     }
 }
 
 module side_body_inner_outline_half_lid() {
     
     difference() {
-        body_outline_p();    
+        body_outline_p(outer_offset = - body_thickness/2 - thickness_lid_gap/2);    
         
         // cutting cube
-        translate([0,-body_lid_mask_size/2,0])
-            cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
+        translate([0, -body_lid_mask_size/2, 0])
+            cube([body_lid_mask_size, body_lid_mask_size, body_lid_mask_size], center = true);
     }
 }
 
@@ -269,9 +270,9 @@ module side_lid_outer() {
     
       side_body_outer_outline_half_lid();
        
-      translate([0,body_lid_mask_size/2+cut_y_offset+lid_gap,-body_lid_mask_size/2+cut_z_offset-lid_gap ])
+      translate([0, body_lid_mask_size/2 + cut_y_offset + lid_gap, -body_lid_mask_size/2 + cut_z_offset - lid_side_gap ])
     
-          cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
+          cube([body_lid_mask_size, body_lid_mask_size, body_lid_mask_size], center = true);
     }    
 }
 
@@ -280,7 +281,7 @@ module side_lid_inner() {
     
       side_body_inner_outline_half_lid();
        
-      translate([0,body_lid_mask_size/2+cut_y_offset+lid_gap+clack_offset,-body_lid_mask_size/2+cut_z_offset-lid_gap-clack_offset ])
+      translate([0, body_lid_mask_size/2 + cut_y_offset + lid_side_gap - clack_offset,-body_lid_mask_size/2 + cut_z_offset + clack_offset - lid_side_gap ])
     
           cube([body_lid_mask_size,body_lid_mask_size,body_lid_mask_size], center = true);
     }    
@@ -296,8 +297,8 @@ module side_lid_horizontal_clack() {
 
 module side_lid_horizontal_clack_sphere(sphere_offset = 0) {
     
-    translate([0, -horizontal_clack_length/2 + clack_spere_radus, -clack_spere_radus+clack_spere_radus/2])
-      sphere(r=clack_spere_radus+sphere_offset);
+    translate([0, -horizontal_clack_length/2 + clack_spere_radus, -clack_spere_radus + clack_spere_radus/2])
+      sphere(r = clack_spere_radus + sphere_offset);
 }
 
 //dside_lid_horizontal_clack();
@@ -318,14 +319,14 @@ module side_lid() {
     side_lid_inner();
     
     // vertical clack
-    translate([7, body_depth-body_thickness-lid_gap*2-1.9, cut_z_offset-5.1])
-      side_lid_vertical_clack();
+    //translate([7, body_depth-body_thickness-lid_gap*2-1.9, cut_z_offset-5.1])
+    //  side_lid_vertical_clack();
 
     // clack horizontal  
-    translate([0,cut_y_offset+3, -body_height/2+body_thickness+lid_gap*2+0.8]) {
-      side_lid_horizontal_clack();
-      side_lid_horizontal_clack_sphere();
-    }
+    //translate([0,cut_y_offset+3, -body_height/2+body_thickness+lid_gap*2+0.8]) {
+    //  side_lid_horizontal_clack();
+    //  side_lid_horizontal_clack_sphere();
+    //}
 
     // clack sphere    
 }
@@ -440,7 +441,7 @@ union() {
   body();
   body_inner();
     
-  translate([-8, 71, 121]) 
+  translate([-8, 71, 123]) 
     rotate([0,180,6.5])
       battery();
 }
@@ -448,13 +449,15 @@ union() {
 
 body_combined();
 
+vertical_tech_offset = 30;
+horisontal_tech_offset = 30;
 
-translate([0,body_y_offset,body_z_offset + 15])
+translate([0, body_y_offset, body_z_offset + vertical_tech_offset])
   top_lid();
 
 
 
-translate([0,body_y_offset+60,body_z_offset])
+translate([0, body_y_offset + horisontal_tech_offset, body_z_offset])
   side_lid();
 
 
