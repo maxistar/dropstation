@@ -47,7 +47,7 @@ cut_z_offset = 15;
     
 horizontal_clack_length = clack_length-6;
     
-clack_spere_radus = 1.1;
+clack_spere_radus = 0.8;
     
 tube_radius = 3;
 
@@ -93,16 +93,16 @@ module body_inner_outline_top_lid() {
 
 module top_lid_clack_spheres(radius_offset = 0) {
     
-    small_clack_sphere = clack_spere_radus / 1.5;
+    small_clack_sphere = clack_spere_radus;
     
-    y_offset = body_depth-small_clack_sphere*2-body_thickness/2-thickness_lid_gap;
-    z_offset = top_lid_z_offset + clack_offset/2;
+    top_lid_spere_y_offset = body_depth - small_clack_sphere - body_thickness / 2 - thickness_lid_gap-0.4;
+    top_lid_spere_z_offset = top_lid_z_offset + clack_offset/2;
     
-    translate([0,y_offset,z_offset])
-      sphere(r=small_clack_sphere+ radius_offset);
+    translate([0,top_lid_spere_y_offset,top_lid_spere_z_offset])
+      sphere(r=small_clack_sphere + radius_offset);
     
-    translate([0,-y_offset,z_offset])
-      sphere(r=small_clack_sphere+ radius_offset);
+    translate([0,-top_lid_spere_y_offset,top_lid_spere_z_offset])
+      sphere(r=small_clack_sphere + radius_offset);
     
 }
 
