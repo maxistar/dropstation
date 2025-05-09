@@ -1,4 +1,4 @@
-$fn=150;
+$fn=50;
 
 battery_18500_length = 50;
 battery_18500_radius = 9;
@@ -452,14 +452,14 @@ module body_combined() {
   }
 }
 
-//body_combined();
+body_combined();
 
 vertical_tech_offset = 20;
 horisontal_tech_offset = 20;
 
 
-//translate([0, body_y_offset, body_z_offset + vertical_tech_offset])
-//  top_lid();
+translate([0, body_y_offset, body_z_offset + vertical_tech_offset])
+  top_lid();
 
 
 
