@@ -7,10 +7,20 @@
 
 #include <ESP8266mDNS.h>
 #include <StreamString.h>
-#include "controller01.h"
+
+#include <EEPROM.h>
+
+#include <NTPClient.h>
+
+#include "config.h"
 
 #include "WebServer.h"
 #include "Timer.h"
+
+struct { 
+    char mySSID[MAX_STRING_LENGTH] = "";
+    char myPW[MAX_STRING_LENGTH] = "";
+} settings;
 
 WebServer webServer;
 
@@ -34,6 +44,14 @@ int humidityValue = 0; // value read from the pot
 int t = 0;
 long int jsonInterval = 0;
 bool watering = false;
+
+
+const long utcOffsetInSeconds = 7200;
+
+char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+// Define NTP Client to get time
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 
 int normaliseHimidityValue(int rawData) {
@@ -72,6 +90,8 @@ void wifiSetup()
         Serial.println("MDNS responder started");
     }
 
+    timeClient.begin();
+
 }
 
 
@@ -90,6 +110,9 @@ void wateringSetup()
 
 void wateringLoop()
 {
+
+
+
     digitalWrite(PUMP_PIN, PUMP_OFF);
 
     USE_SERIAL.print("read power");
@@ -105,6 +128,18 @@ void wateringLoop()
     humidityValue = normaliseHimidityValue(analogRead(A0));
     digitalWrite(HUMIDITY_PIN, LOW);
 
+    if (WORK_OFFLINE) {
+        t = 10;
+        USE_SERIAL.printf("watering for %d seconds\n", t);
+        digitalWrite(PUMP_PIN, PUMP_ON);
+        Serial.print("pump stared\n");
+        delay(1000 * t);
+        digitalWrite(PUMP_PIN, PUMP_OFF);
+        Serial.print("pump stopped\n");
+        return;
+    }
+
+    // send state to server
     bool ok = false;
     StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
 
@@ -184,9 +219,7 @@ void wateringLoop()
     // digitalWrite(LED_PIN, LED_OFF);   // turn the LED on (HIGH is the voltage level)
 
     // WiFi.mode(WIFI_OFF);
-    digitalWrite(PUMP_PIN, PUMP_OFF);
-    digitalWrite(POWER_PIN, LOW);
-    digitalWrite(HUMIDITY_PIN, LOW);
+
     // goSleeping();
 }
 
@@ -214,6 +247,19 @@ void WateringDevice::setup() {
     
     wateringSetup();
     sleepingTimer.start();
+
+    timeClient.update();
+
+    Serial.print(daysOfTheWeek[timeClient.getDay()]);
+    Serial.print(", ");
+    Serial.print(timeClient.getHours());
+    Serial.print(":");
+    Serial.print(timeClient.getMinutes());
+    Serial.print(":");
+    Serial.println(timeClient.getSeconds());
+    Serial.print("  ");
+    Serial.println(timeClient.getEpochTime());
+
 }
 
 void WateringDevice::loop() {

@@ -3,6 +3,8 @@
  *
  *  Created on: 24.05.2015
  *
+ * required libraries:
+ * NTPClient by Fabricio Weinberg
  */
 
 

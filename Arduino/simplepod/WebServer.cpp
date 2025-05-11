@@ -54,7 +54,7 @@ void WebServer::handleStatus()
 {
     String out;
     out.reserve(100);
-    out = "{ battery: 100, soilMoisture: 40, lastWatering: \"2024-07-31T00:00:00Z\" }";
+    out = "{ \"battery\": 100, \"soilMoisture\": 40, \"lastWatering\": \"2024-07-31T00:00:00Z\" }";
     server.send(200, "application/json", out.c_str());
 }
 
