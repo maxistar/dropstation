@@ -17,10 +17,17 @@
 #include "WebServer.h"
 #include "Timer.h"
 
-struct { 
-    char mySSID[MAX_STRING_LENGTH] = "";
-    char myPW[MAX_STRING_LENGTH] = "";
-} settings;
+#include "DeviceState.h"
+
+//struct { 
+//    char mySSID[MAX_STRING_LENGTH] = "";
+//    char myPW[MAX_STRING_LENGTH] = "";
+//} settings;
+
+
+
+
+
 
 WebServer webServer;
 
@@ -38,9 +45,8 @@ Timer sleepingTimer(60000, []() {
 
 #define JSON_BUFFER_SIZE 500
 
-int powerValue = 0;    // value read from the pot
-int powerValuePercent = 0;
-int humidityValue = 0; // value read from the pot
+
+DeviceState deviceState = {0, 0};
 int t = 0;
 long int jsonInterval = 0;
 bool watering = false;
@@ -101,8 +107,8 @@ void wateringSetup()
     pinMode(POWER_PIN, OUTPUT);
     pinMode(HUMIDITY_PIN, OUTPUT);
     digitalWrite(PUMP_PIN, PUMP_OFF); // turn the LED on (HIGH is the voltage level)
-    digitalWrite(POWER_PIN, LOW);
-    digitalWrite(HUMIDITY_PIN, LOW);
+    digitalWrite(POWER_PIN, POWER_SENSOR_OFF);
+    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 }
 
 
@@ -116,17 +122,25 @@ void wateringLoop()
     digitalWrite(PUMP_PIN, PUMP_OFF);
 
     USE_SERIAL.print("read power");
-    digitalWrite(POWER_PIN, HIGH);
+    digitalWrite(POWER_PIN, POWER_SENSOR_ON);
     delay(1000);
-    powerValue = analogRead(A0);
-    powerValuePercent = normaliseVoltageValue(powerValue);
-    digitalWrite(POWER_PIN, LOW);
+    deviceState.powerValue = analogRead(A0);
+    int powerValuePercent = normaliseVoltageValue(deviceState.powerValue);
+    digitalWrite(POWER_PIN, POWER_SENSOR_OFF);
 
     USE_SERIAL.print("read humidity");
-    digitalWrite(HUMIDITY_PIN, HIGH);
+    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_ON);
     delay(1000);
-    humidityValue = normaliseHimidityValue(analogRead(A0));
-    digitalWrite(HUMIDITY_PIN, LOW);
+    deviceState.humidityValue = normaliseHimidityValue(analogRead(A0));
+    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
+
+    String postString = String(
+            "{\"nextCall\":") +
+        String((int)(SLEEP_TIMEOUT / 1000000)) + 
+        String(", \"battery\": ") + String(deviceState.powerValue) + 
+        String(", \"batteryNorm\": ") + String(powerValuePercent) + 
+        String(", \"humidity\": ") + String(deviceState.humidityValue) + 
+        String("}");
 
     if (WORK_OFFLINE) {
         t = 10;
@@ -136,6 +150,8 @@ void wateringLoop()
         delay(1000 * t);
         digitalWrite(PUMP_PIN, PUMP_OFF);
         Serial.print("pump stopped\n");
+        Serial.print(postString);
+
         return;
     }
 
@@ -158,14 +174,7 @@ void wateringLoop()
     http.addHeader("Content-Type", "application/json");
     // start connection and send HTTP header
     // int httpCode = http.GET();
-    int httpCode = http.POST(
-        String(
-            "{\"nextCall\":") +
-        String((int)(SLEEP_TIMEOUT / 1000000)) + 
-        String(", \"battery\": ") + String(powerValue) + 
-        String(", \"batteryNorm\": ") + String(powerValuePercent) + 
-        String(", \"humidity\": ") + String(humidityValue) + 
-        String("}"));
+    int httpCode = http.POST(postString);
 
     // httpCode will be negative on error
     if (httpCode > 0)
@@ -215,12 +224,6 @@ void wateringLoop()
     }
 
     http.end();
-
-    // digitalWrite(LED_PIN, LED_OFF);   // turn the LED on (HIGH is the voltage level)
-
-    // WiFi.mode(WIFI_OFF);
-
-    // goSleeping();
 }
 
 
@@ -243,6 +246,7 @@ void WateringDevice::setup() {
 
     webServer.setOnMainPageLoad([]() {
         sleepingTimer.restart();
+        return deviceState;
     });
     
     wateringSetup();

@@ -5,11 +5,12 @@
 
 ESP8266WebServer server(80);
 
-
+DeviceState webServerDeviceState;
 
 void WebServer::handleRoot()
 {
-    this->onMainPageLoad();
+
+    webServerDeviceState = this->onMainPageLoad();
 
 
     server.send(200, "text/html", main_html);
@@ -31,7 +32,7 @@ void handleGlobalCSS()
     server.send(200, "text/css", global_css);
 }
 
-void WebServer::setOnMainPageLoad(void (*callback)())
+void WebServer::setOnMainPageLoad(DeviceState (*callback)())
 {
     this->onMainPageLoad = callback;
 }
@@ -54,7 +55,7 @@ void WebServer::handleStatus()
 {
     String out;
     out.reserve(100);
-    out = "{ \"battery\": 100, \"soilMoisture\": 40, \"lastWatering\": \"2024-07-31T00:00:00Z\" }";
+    out = "{ \"battery\": " + String(webServerDeviceState.powerValue) + ", \"soilMoisture\": " + String(webServerDeviceState.humidityValue) + ", \"lastWatering\": \"2024-07-31T00:00:00Z\" }";
     server.send(200, "application/json", out.c_str());
 }
 

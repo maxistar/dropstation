@@ -2,10 +2,11 @@
 #define WEBSERVER_H
 
 #include <Arduino.h>
+#include "DeviceState.h"
 
 class WebServer {
 private:
-    void (*onMainPageLoad)() = NULL;
+    DeviceState (*onMainPageLoad)() = NULL;
     void (*onClickWatering)() = NULL;
     void handleWatering();
     void handleStatus();
@@ -13,7 +14,7 @@ private:
 public:
     void setup();
     void loop();
-    void setOnMainPageLoad(void (*)());
+    void setOnMainPageLoad(DeviceState (*)());
     void setOnClickWatering(void (*)());
 };
 
