@@ -1,4 +1,4 @@
-$fn=50;
+$fn=150;
 
 battery_18500_length = 50;
 battery_18500_radius = 9;
@@ -269,6 +269,12 @@ module body() {
     //translate
     rotate([0, 90, 0])
     cylinder(r=tube_radius, h=10, center=true);
+      
+    // tube for water input
+  translate([22,body_y_offset+2,body_z_offset-body_height/2+56])
+    //translate
+    rotate([0, 90, 0])
+    cylinder(r=tube_radius, h=10, center=true);      
 
 
       // tube for water input
@@ -491,15 +497,14 @@ module body_combined() {
   }
 }
 
-body_combined();
+//body_combined();
 
 vertical_tech_offset = 20;
 horisontal_tech_offset = 20;
 
 
-translate([0, body_y_offset, body_z_offset + vertical_tech_offset])
-  top_lid();
-
+//translate([0, body_y_offset, body_z_offset + vertical_tech_offset])
+//  top_lid();
 
 
 translate([0, body_y_offset + horisontal_tech_offset, body_z_offset])
