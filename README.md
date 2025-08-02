@@ -39,6 +39,12 @@ grant all privileges on dropstation.* to 'polivalka'@'localhost';
 CREATE USER 'polivalka2'@'172.22.0.1' IDENTIFIED BY "strongpassword";
 grant all privileges on dropstation.* to 'polivalka2'@'172.22.0.1';
 
+## Restore Dump
+
+- create database in localhost:8080
+  - call it dropstation / utf8_general_ci
+  - restore dump
+
 
 [See more about this project(in russian)](http://maxistar.ru/projects/diy/watering/)
 
