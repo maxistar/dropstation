@@ -2,10 +2,10 @@
 
 ## TODO
 
-- setup simple structure
-- run simple project
-- run simple project in docker
-- connect simple project to database
+- [x] setup simple structure
+- [x] run simple project
+- [x] run simple project in docker
+- [ ] connect simple project to database
 
 
 
@@ -13,7 +13,7 @@
 
 
 
-start localy:
+start locally:
 
 ```shell
 mvn spring-boot:run
