@@ -5,11 +5,13 @@
 - [x] setup simple structure
 - [x] run simple project
 - [x] run simple project in docker
-- [ ] connect simple project to database
-- [ ] use grable insted of maven - I like gradle more
-- [ ] create docker compose with mysql backend
-- [ ] create simple grud api endpoints
-
+- [x] connect simple project to database
+- [x] use grable insted of maven - I like gradle more
+- [x] create docker compose with mysql backend
+- [x] create simple grud api endpoints
+- [ ] create classes for watering system
+- [ ] create authorization for the backend
+- [ ] create authorization for devices
 
 
 ## How to start
@@ -19,15 +21,7 @@
 start locally:
 
 ```shell
-mvn spring-boot:run
+./gradlew bootRun
 ```
 
-start in docker:
-
-```shell
-mvn clean package
-docker build -t dropstation .
-docker run -p 8080:8080 dropstation
-```
-
-
+see the java_backend branch with instruction show to dockerize the java backend
