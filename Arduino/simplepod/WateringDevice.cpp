@@ -60,7 +60,7 @@ WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
 
-int normaliseHimidityValue(int rawData) {
+int normaliseHumidityValue(int rawData) {
   double value = rawData;
   value = value * HUMIDITY_K + HUMIDITY_V0;
   return (int) value;
@@ -131,7 +131,7 @@ void wateringLoop()
     USE_SERIAL.print("read humidity");
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_ON);
     delay(1000);
-    deviceState.humidityValue = normaliseHimidityValue(analogRead(A0));
+    deviceState.humidityValue = normaliseHumidityValue(analogRead(A0));
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 
     String postString = String(
