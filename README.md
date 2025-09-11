@@ -12,7 +12,7 @@ Backend is a php application that is being requested bay smart device in order t
 - Create config
 - Create virtual host for php website
 
-## Running in Docker
+## Running PHP Backend in Docker
 
 `docker-compose up`
 

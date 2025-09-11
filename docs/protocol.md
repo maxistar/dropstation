@@ -25,12 +25,16 @@
 
 ````json
 {
-  "eventType": "watering",
-  "duration": 100,
   "interval": 1000,
   "nextEventIn": 10000,
-  "eventNum": 123,
-  "scheduleId": 1
+  "events": [
+    {
+    "eventId": 123,
+    "scheduleId": 1,
+    "eventType": "watering",
+    "duration": 100
+    }
+  ]
 }
 ````
 
