@@ -10,9 +10,9 @@ ALTER TABLE `devices` ADD `sleep_duration` INT NOT NULL AFTER `battery`;
 
 ALTER TABLE `devices` ADD `activity_number` INT NOT NULL AFTER `battery`;
 
-ALTER TABLE `devices` ADD `recent_event_id` INT NOT NULL AFTER `recent_event_id`;
-
 ALTER TABLE `devices` ADD `recent_event_time` DATETIME NULL AFTER `activity_number`;
+
+ALTER TABLE `devices` ADD `recent_event_id` INT NULL AFTER `recent_event_time`;
 
 ALTER TABLE `devices` ADD `check_interval` INT NOT NULL AFTER `sleep_duration`;
 

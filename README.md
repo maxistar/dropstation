@@ -14,17 +14,23 @@ Backend is a php application that is being requested bay smart device in order t
 
 ## Running PHP Backend in Docker
 
+start containers:
 `docker-compose up`
 
+create database dropstation and setup users: 
 localhost:8080
 
-install dependencies
+install dependencies:
 
 `https://github.com/maxistar/etherra-core.git`
-
 `cd .. && compose install`
 
+
+access device in browser: http://localhost/api/v1/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
+
 access device in browser: http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
+
+access v3 with curl:
 
 
 ### Database access
@@ -33,11 +39,13 @@ access device in browser: http://localhost/api/v2/watering/?device=1a382ff4-5099
 
 ## Creating user in MySQL Database
 
+```
 CREATE USER 'polivalka'@'localhost' IDENTIFIED BY "strongpassword";
 grant all privileges on dropstation.* to 'polivalka'@'localhost';
 
 CREATE USER 'polivalka2'@'172.22.0.1' IDENTIFIED BY "strongpassword";
 grant all privileges on dropstation.* to 'polivalka2'@'172.22.0.1';
+```
 
 ## Restore Dump
 

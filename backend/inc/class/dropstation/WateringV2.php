@@ -6,7 +6,7 @@ use \etherra\Db;
 class WateringV2 {
     function show(){
         $deviceId = $_GET['device'];
-        $statusesStr = $_GET['ttt'];
+        $statusesStr = $_GET['ttt'] ?? '';
         if ($statusesStr) {
             $statuses = json_decode($statusesStr, true);
         }
