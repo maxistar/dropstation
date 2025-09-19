@@ -6,11 +6,11 @@ How to install
 
 ## Backend
 
-Backend is a php application that is being requested bay smart device in order to make a decision if it is the time for watering.
+Backend is a PHP application that is requested by a smart device in order to decide whether it is time for watering.
 
-- Create mysql database.
-- Create config
-- Create virtual host for php website
+- Create a MySQL database.
+- Create config.
+- Create a virtual host for the PHP website.
 
 ## Running PHP Backend in Docker
 
@@ -20,11 +20,14 @@ start containers:
 create database dropstation and setup users: 
 localhost:8080
 
-install dependencies:
+Install dependencies
 
 `https://github.com/maxistar/etherra-core.git`
-`cd .. && compose install`
 
+`cd .. && composer install`
+
+
+Access the device in a browser: http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
 
 access device in browser: http://localhost/api/v1/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27
 
@@ -35,7 +38,7 @@ access v3 with curl:
 
 ### Database access
 
-- there is phpmyadmin running on port 8080
+- there is phpMyAdmin running on port 8080
 
 ## Creating user in MySQL Database
 
@@ -54,7 +57,7 @@ grant all privileges on dropstation.* to 'polivalka2'@'172.22.0.1';
   - restore dump
 
 
-[See more about this project(in russian)](http://maxistar.ru/projects/diy/watering/)
+[See more about this project (in Russian)](http://maxistar.ru/projects/diy/watering/)
 
 
 ## Test Backend
@@ -103,7 +106,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":
 table is in voltagecalibration.txt
 
 - Vmeasure - measured with voltmeter
-- Vout - measured in resistor devider
+- Vout - measured in resistor divider
 - Vmeasure = Vout * k
 - k = Vmeasure / Vout 
 - example:
@@ -122,16 +125,16 @@ yarn build
 ### WebServer Mode
 
 - works 1 minute showing a web interface
-- web interface shows all basic parameters of the device and allows trigger watering
-- after one minute device goes slipping to 1 hour
+- web interface shows all basic parameters of the device and allows triggering watering
+- after one minute the device goes to sleep for 1 hour
 - sleep timeout can be deactivated by reloading the page
 
-### Road Map
+### Roadmap
 
 - mobile applications
-  - ios application
-  - android application
-- serve side application
+-  - iOS application
+-  - Android application
+- server-side application
 - web service
 - hardware
   - develop PCB
