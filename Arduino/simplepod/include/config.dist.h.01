@@ -1,0 +1,15 @@
+/**
+ * controller 01 config file
+ * 
+ * the on that on Ilushuas Room
+ */
+ 
+#define WIFI_PASSWORD "MaxMax256"
+#define WIFI_NAME "maxhome"
+#define SERVER_ADDRESS "http://dropstation.x.maxistar.me/api/v2/watering/?device=06b5fc38-1cd7-4a76-be8f-80f21eb8a104"
+#define PUMP_PIN 12
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+
+fdd

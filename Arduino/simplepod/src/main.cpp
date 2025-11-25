@@ -7,7 +7,7 @@
  * NTPClient by Fabricio Weinberg
  */
 
-
+#include <Arduino.h>
 #include "WateringDevice.h"
 
 WateringDevice wateringDevice;
