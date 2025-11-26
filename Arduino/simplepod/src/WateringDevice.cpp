@@ -17,7 +17,7 @@
 
 #include "DeviceState.h"
 
-#include "DoubleResetGuard.cpp"
+#include "DoubleResetGuard.h"
 
 // struct {
 //     char mySSID[MAX_STRING_LENGTH] = "";
@@ -31,7 +31,6 @@ uint64_t interval = SLEEP_TIMEOUT;
 
 DoubleResetGuard drg(10000); // таймаут 10 секунд
 
-
 Timer sleepingTimer(60000, []()
                     {
     drg.disarm();
@@ -40,7 +39,6 @@ Timer sleepingTimer(60000, []()
     USE_SERIAL.printf("sleep for: %llu\n", interval);
     ESP.deepSleep(interval);
     ESP.restart(); });
-
 
 #define JSON_BUFFER_SIZE 500
 
