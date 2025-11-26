@@ -8,8 +8,6 @@
 #include <ESP8266mDNS.h>
 #include <StreamString.h>
 
-#include <EEPROM.h>
-
 #include <NTPClient.h>
 
 #include "config.h"
@@ -19,38 +17,37 @@
 
 #include "DeviceState.h"
 
-//struct { 
-//    char mySSID[MAX_STRING_LENGTH] = "";
-//    char myPW[MAX_STRING_LENGTH] = "";
-//} settings;
+#include "DoubleResetGuard.cpp"
 
-
-
-
-
+// struct {
+//     char mySSID[MAX_STRING_LENGTH] = "";
+//     char myPW[MAX_STRING_LENGTH] = "";
+// } settings;
 
 WebServer webServer;
 
 uint64_t interval = SLEEP_TIMEOUT;
 #define USE_SERIAL Serial
 
+DoubleResetGuard drg(10000); // таймаут 10 секунд
 
-Timer sleepingTimer(60000, []() {
-    delay(1000);
+
+Timer sleepingTimer(60000, []()
+                    {
+    drg.disarm();
+
+                        delay(1000);
     USE_SERIAL.printf("sleep for: %llu\n", interval);
     ESP.deepSleep(interval);
-    ESP.restart();
-});
+    ESP.restart(); });
 
 
 #define JSON_BUFFER_SIZE 500
-
 
 DeviceState deviceState = {0, 0};
 int t = 0;
 long int jsonInterval = 0;
 bool watering = false;
-
 
 const long utcOffsetInSeconds = 7200;
 
@@ -59,19 +56,19 @@ char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursd
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
 
-
-int normaliseHumidityValue(int rawData) {
-  double value = rawData;
-  value = value * HUMIDITY_K + HUMIDITY_V0;
-  return (int) value;
+int normaliseHumidityValue(int rawData)
+{
+    double value = rawData;
+    value = value * HUMIDITY_K + HUMIDITY_V0;
+    return (int)value;
 }
 
-int normaliseVoltageValue(int rawData) {
-  double value = rawData;
-  value = value * VOLTAGE_K + VOLTAGE_V0;
-  return (int) value;
+int normaliseVoltageValue(int rawData)
+{
+    double value = rawData;
+    value = value * VOLTAGE_K + VOLTAGE_V0;
+    return (int)value;
 }
-
 
 void wifiSetup()
 {
@@ -97,9 +94,7 @@ void wifiSetup()
     }
 
     timeClient.begin();
-
 }
-
 
 void wateringSetup()
 {
@@ -111,13 +106,8 @@ void wateringSetup()
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 }
 
-
-
-
 void wateringLoop()
 {
-
-
 
     digitalWrite(PUMP_PIN, PUMP_OFF);
 
@@ -135,14 +125,15 @@ void wateringLoop()
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 
     String postString = String(
-            "{\"nextCall\":") +
-        String((int)(SLEEP_TIMEOUT / 1000000)) + 
-        String(", \"battery\": ") + String(deviceState.powerValue) + 
-        String(", \"batteryNorm\": ") + String(powerValuePercent) + 
-        String(", \"humidity\": ") + String(deviceState.humidityValue) + 
-        String("}");
+                            "{\"nextCall\":") +
+                        String((int)(SLEEP_TIMEOUT / 1000000)) +
+                        String(", \"battery\": ") + String(deviceState.powerValue) +
+                        String(", \"batteryNorm\": ") + String(powerValuePercent) +
+                        String(", \"humidity\": ") + String(deviceState.humidityValue) +
+                        String("}");
 
-    if (WORK_OFFLINE) {
+    if (WORK_OFFLINE)
+    {
         t = 10;
         USE_SERIAL.printf("watering for %d seconds\n", t);
         digitalWrite(PUMP_PIN, PUMP_ON);
@@ -226,29 +217,39 @@ void wateringLoop()
     http.end();
 }
 
-
-
-void WateringDevice::setup() {
+void WateringDevice::setup()
+{
     // Serial.begin(115200);
     USE_SERIAL.begin(115200);
     // USE_SERIAL.setDebugOutput(true);
     USE_SERIAL.println();
     USE_SERIAL.println();
     USE_SERIAL.println();
-    
+
+    drg.begin();
+
     wifiSetup();
 
-    webServer.setup();
+    if (drg.detected())
+    {
+        Serial.println("Double reset detected, starting config web server...");
+        webServer.setup();
 
-    webServer.setOnClickWatering([]() {
-        watering = true;
-    });
+        webServer.setOnClickWatering([]()
+                                     { watering = true; });
 
-    webServer.setOnMainPageLoad([]() {
+        webServer.setOnMainPageLoad([]()
+                                    {
         sleepingTimer.restart();
-        return deviceState;
-    });
-    
+        return deviceState; });
+    }
+    else
+    {
+        Serial.println("Normal boot, regular work mode");
+        // обычный режим: синхронизация времени, работа, подготовка к sleep
+        // syncTimeFromNtp();
+    }
+
     wateringSetup();
     sleepingTimer.start();
 
@@ -263,17 +264,19 @@ void WateringDevice::setup() {
     Serial.println(timeClient.getSeconds());
     Serial.print("  ");
     Serial.println(timeClient.getEpochTime());
-
 }
 
-void WateringDevice::loop() {
-    if (watering) {
-      USE_SERIAL.printf("start watering\n");
-      sleepingTimer.cancel();
-      wateringLoop();
-      watering = false;
-      sleepingTimer.start();
+void WateringDevice::loop()
+{
+    if (watering)
+    {
+        USE_SERIAL.printf("start watering\n");
+        sleepingTimer.cancel();
+        wateringLoop();
+        watering = false;
+        sleepingTimer.start();
     }
+    drg.loop();
     webServer.loop();
     MDNS.update();
     sleepingTimer.loop();
