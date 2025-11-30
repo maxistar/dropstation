@@ -19,6 +19,11 @@ app.post('/api/water', (req, res) => {
     res.json({ success: true });
 });
 
+app.get('/api/keepalive', (req, res) => {
+    // Placeholder for watering action
+    res.json({ success: true });
+});
+
 app.post('/api/settings', (req, res) => {
     const settings = req.body;
     fs.writeFileSync(path.join(__dirname, 'settings.json'), JSON.stringify(settings));

@@ -32,13 +32,14 @@ uint64_t interval = SLEEP_TIMEOUT;
 DoubleResetGuard drg(10000); // таймаут 10 секунд
 
 Timer sleepingTimer(60000, []()
-                    {
-    drg.disarm();
-
-                        delay(1000);
-    USE_SERIAL.printf("sleep for: %llu\n", interval);
-    ESP.deepSleep(interval);
-    ESP.restart(); });
+    {
+      drg.disarm();
+      delay(1000);
+      USE_SERIAL.printf("sleep for: %llu\n", interval);
+      ESP.deepSleep(interval);
+      ESP.restart(); 
+    }
+);
 
 #define JSON_BUFFER_SIZE 500
 
@@ -145,14 +146,12 @@ void wateringLoop()
     }
 
     // send state to server
-    bool ok = false;
     StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
 
     USE_SERIAL.printf("loop");
 
     HTTPClient http;
     WiFiClient client;
-    int i;
 
     USE_SERIAL.print("[HTTP] begin...\n");
     // configure traged server and url
@@ -234,12 +233,24 @@ void WateringDevice::setup()
         webServer.setup();
 
         webServer.setOnClickWatering([]()
-                                     { watering = true; });
+            { 
+                watering = true; 
+            }
+        );
 
         webServer.setOnMainPageLoad([]()
-                                    {
-        sleepingTimer.restart();
-        return deviceState; });
+            {
+                sleepingTimer.restart();
+                return deviceState; 
+            }
+        );
+
+        // Keepalive endpoint extends awake time while the UI is open.
+        webServer.setOnKeepAlive([]()
+            { 
+                sleepingTimer.restart(); 
+            }
+        );
     }
     else
     {

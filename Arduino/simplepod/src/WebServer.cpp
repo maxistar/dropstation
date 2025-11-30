@@ -42,6 +42,11 @@ void WebServer::setOnClickWatering(void (*callback)())
     this->onClickWatering = callback;
 }
 
+void WebServer::setOnKeepAlive(void (*callback)())
+{
+    this->onKeepAlive = callback;
+}
+
 void WebServer::handleWatering()
 {
     this->onClickWatering();
@@ -57,6 +62,15 @@ void WebServer::handleStatus()
     out.reserve(100);
     out = "{ \"battery\": " + String(webServerDeviceState.powerValue) + ", \"soilMoisture\": " + String(webServerDeviceState.humidityValue) + ", \"lastWatering\": \"2024-07-31T00:00:00Z\" }";
     server.send(200, "application/json", out.c_str());
+}
+
+void WebServer::handleKeepAlive()
+{
+    if (this->onKeepAlive != NULL)
+    {
+        this->onKeepAlive();
+    }
+    server.send(200, "application/json", "{\"result\":\"ok\"}");
 }
 
 void handleNotFound()
@@ -105,6 +119,7 @@ void WebServer::setup() {
     server.on("/build/bundle.js", handleJS);
     server.on("/build/bundle.css", handleCSS);
     server.on("/global.css", handleGlobalCSS);
+    server.on("/api/keepalive", [this]{this->handleKeepAlive();});
     server.on("/api/water", HTTP_POST, [this]{this->handleWatering();});
     server.on("/api/status", [this]{this->handleStatus();});
     
