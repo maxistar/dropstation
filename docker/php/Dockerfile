@@ -1,6 +1,6 @@
 # Dockerfile
 # see https://hub.docker.com/_/php for configuration
-FROM php:8-apache
+FROM php:7.4-apache
 
 MAINTAINER Max Starikov <maxim.starikov@gmail.com>
 

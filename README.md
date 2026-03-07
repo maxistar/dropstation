@@ -20,6 +20,39 @@ start containers:
 create database dropstation and setup users: 
 localhost:8080
 
+## MySQL 8 Local Bootstrap
+
+The Docker database runtime now targets MySQL 8.
+The local PHP runtime is pinned to PHP 7.4 to match the production server.
+
+Start the local services:
+
+```bash
+docker compose up -d db web phpmyadmin
+```
+
+Bootstrap the database with the repository dump, the MySQL 8 compatibility step, and the follow-up schema changes:
+
+```bash
+bash scripts/bootstrap-mysql8.sh
+```
+
+The bootstrap script applies:
+
+- `backend/inc/sql/dump231001.sql`
+- `backend/inc/sql/mysql8_compat.sql`
+- `backend/inc/sql/20250802_add_more_fields.sql`
+
+## Validating Watering Endpoints on MySQL 8
+
+Run endpoint checks from inside the PHP container:
+
+```bash
+docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/api/v1/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27');"
+docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27');"
+docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/api/v3/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27');"
+```
+
 Install dependencies
 
 `https://github.com/maxistar/etherra-core.git`
