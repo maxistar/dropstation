@@ -1,5 +1,6 @@
 .idea
 .vscode
+.env
 backend/.java
 backend/vendor
 backend/inc/config/site.live.conf.php

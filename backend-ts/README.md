@@ -30,21 +30,29 @@ docker compose up -d db web phpmyadmin
 bash scripts/bootstrap-mysql8.sh
 ```
 
-3. Run the TypeScript backend:
+3. Create your local environment file:
+
+```bash
+cp .env.example .env
+```
+
+4. Run the TypeScript backend:
 
 ```bash
 npm run dev
 ```
 
-The service defaults to:
+The service loads variables from `.env`. The example file is set up for running `backend-ts` on the host machine against the Dockerized MySQL instance:
 
 - `HOST=0.0.0.0`
 - `PORT=3001`
-- `DB_HOST=db`
-- `DB_PORT=3306`
+- `DB_HOST=127.0.0.1`
+- `DB_PORT=3307`
 - `DB_NAME=dropstation`
 - `DB_USER=root`
 - `DB_PASSWORD=gotechnies`
+
+If you later run the TypeScript backend inside Docker on the same Compose network, switch DB settings to `DB_HOST=db` and `DB_PORT=3306`.
 
 ## Validation
 

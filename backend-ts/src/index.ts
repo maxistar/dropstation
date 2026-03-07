@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { buildServer } from "./app/build-server.js";
 import { loadConfig } from "./config/load-config.js";
 import { createDatabaseContext } from "./db/index.js";
