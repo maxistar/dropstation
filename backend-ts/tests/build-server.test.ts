@@ -197,4 +197,124 @@ describe("buildServer", () => {
       "04ABC20A": 40,
     });
   });
+
+  it("serves the UI device list", async () => {
+    const deviceRows = [
+      {
+        id: 7,
+        userId: 1,
+        placeId: 1,
+        deviceKey: "dev-7",
+        lastAccess: null,
+        notes: "Greenhouse controller",
+        battery: 4.0,
+        sleepDuration: 3600,
+        activityNumber: 2,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 900,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM devices d") && sql.includes("ORDER BY d.id ASC")) {
+            return [deviceRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/devices",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 7,
+        name: "Greenhouse controller",
+        notes: "Greenhouse controller",
+        deviceKey: "dev-7",
+        lastAccess: null,
+        battery: 4,
+        sleepDuration: 3600,
+        activityNumber: 2,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 900,
+      },
+    ]);
+  });
+
+  it("creates a UI device", async () => {
+    const createdDeviceRows = [
+      {
+        id: 42,
+        userId: 1,
+        placeId: null,
+        deviceKey: "new-device",
+        lastAccess: null,
+        notes: "",
+        battery: null,
+        sleepDuration: 0,
+        activityNumber: 0,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 0,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM devices d") && params?.[0] === 42) {
+            return [createdDeviceRows, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("INSERT INTO devices")) {
+            return [{ insertId: 42 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/devices",
+      payload: {
+        name: "Ignored UI Name",
+        notes: "",
+        deviceKey: "new-device",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({
+      id: 42,
+      name: "Device 42",
+      notes: "",
+      deviceKey: "new-device",
+      lastAccess: null,
+      battery: null,
+      sleepDuration: 0,
+      activityNumber: 0,
+      recentEventTime: null,
+      recentEventId: null,
+      checkInterval: 0,
+    });
+  });
 });

@@ -29,7 +29,7 @@ export function buildServer(
     };
   });
 
-  registerUiRoutes(app);
+  registerUiRoutes(app, database);
   registerRuntimeRoutes(app, database);
 
   return app;
