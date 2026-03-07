@@ -14,5 +14,6 @@ mysql_exec -e "DROP DATABASE IF EXISTS \`${DB_NAME}\`; CREATE DATABASE \`${DB_NA
 mysql_exec "${DB_NAME}" < backend/inc/sql/dump231001.sql
 mysql_exec "${DB_NAME}" < backend/inc/sql/mysql8_compat.sql
 mysql_exec "${DB_NAME}" < backend/inc/sql/20250802_add_more_fields.sql
+mysql_exec "${DB_NAME}" < backend/inc/sql/20260307_align_openapi_schema.sql
 
 echo "MySQL 8 bootstrap completed for database '${DB_NAME}'."

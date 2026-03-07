@@ -42,6 +42,7 @@ The bootstrap script applies:
 - `backend/inc/sql/dump231001.sql`
 - `backend/inc/sql/mysql8_compat.sql`
 - `backend/inc/sql/20250802_add_more_fields.sql`
+- `backend/inc/sql/20260307_align_openapi_schema.sql`
 
 ## Validating Watering Endpoints on MySQL 8
 
@@ -52,6 +53,18 @@ docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/ap
 docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/api/v2/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27');"
 docker exec php7_dropstation php -r "echo file_get_contents('http://localhost/api/v3/watering/?device=1a382ff4-5099-4be1-9e48-71eb7c36db27');"
 ```
+
+The aligned schema adds canonical persistence for:
+
+- `plants`
+- `tanks`
+- `tank_devices`
+- `events_canonical`
+- `commands`
+
+Legacy PHP runtime compatibility is preserved by keeping the existing operational tables in place and backfilling canonical structures alongside them.
+
+See [legacy-to-canonical-schema-mapping.md](docs/legacy-to-canonical-schema-mapping.md) for the mapping rules and migration assumptions.
 
 Install dependencies
 
