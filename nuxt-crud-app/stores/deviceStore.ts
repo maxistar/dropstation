@@ -1,11 +1,9 @@
 import { defineStore } from 'pinia';
+import type { BackendTsDevice, BackendTsPoint } from '~/composables/useBackendTsApi';
+import { useBackendTsApi } from '~/composables/useBackendTsApi';
 
 // Define the types for your state
-interface Device {
-    id: number;
-    name: string;
-    // Add other fields as needed
-}
+type Device = BackendTsDevice;
 
 interface Capacitor {
     id: number;
@@ -19,11 +17,7 @@ interface Place {
     // Add other fields as needed
 }
 
-interface Point {
-    id: number;
-    value: string;
-    // Add other fields as needed
-}
+type Point = BackendTsPoint;
 
 interface DeviceStoreState {
     devices: Device[];
@@ -47,9 +41,15 @@ export const useDeviceStore = defineStore('deviceStore', {
     },
     actions: {
         async fetchDevices () {
-            const data  = await $fetch<Device[]>('/api/devices');
+            const api = useBackendTsApi();
+            const data  = await api.listDevices();
             this.devices = data;
             return data;
+        },
+
+        async fetchDevice (id: number) {
+            const api = useBackendTsApi();
+            return api.getDevice(id);
         },
 
         async fetchCapacitors () {
@@ -65,31 +65,27 @@ export const useDeviceStore = defineStore('deviceStore', {
         },
 
         async fetchPoints () {
-            const data  = await $fetch<Point[]>('/api/points');
+            const api = useBackendTsApi();
+            const data  = await api.listPoints();
             this.points = data;
             return data;
         },
         
         async createDevice (name: string, notes: string, deviceKey: string) {
-            await $fetch('/api/devices/create', {
-                method: 'POST',
-                body: { name, notes, deviceKey },
-            });
+            const api = useBackendTsApi();
+            await api.createDevice({ name, notes, deviceKey });
             await this.fetchDevices();
         },
 
         async updateDevice (id: number, name: string, notes: string, deviceKey: string) {
-            await $fetch('/api/devices/update', {
-                method: 'POST',
-                body: { id, name, notes, deviceKey },
-            });
+            const api = useBackendTsApi();
+            await api.updateDevice(id, { name, notes, deviceKey });
             await this.fetchDevices();
         },
 
         async deleteDevice (id: number) {
-            await $fetch(`/api/devices/delete?id=${id}`, {
-                method: 'DELETE',
-            });
+            const api = useBackendTsApi();
+            await api.deleteDevice(id);
             await this.fetchDevices();
         },
     },

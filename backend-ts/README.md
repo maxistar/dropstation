@@ -69,9 +69,17 @@ Runtime endpoint shape:
 curl "http://localhost:3001/api/device/v1/watering?device=1a382ff4-5099-4be1-9e48-71eb7c36db27"
 ```
 
+UI/admin endpoint shapes used by Nuxt:
+
+```bash
+curl "http://localhost:3001/api/ui/v1/devices"
+curl "http://localhost:3001/api/ui/v1/points"
+```
+
 ## Coexistence with PHP
 
 - PHP remains available as the legacy backend during transition
 - TypeScript is the primary backend implementation target
 - behavior can be compared against the PHP runtime while migration continues
 - the long-term goal is to retire the PHP backend after the TypeScript backend covers the required workflows
+- Nuxt now consumes migrated device and point admin flows through `backend-ts` rather than Nuxt-local SQL handlers

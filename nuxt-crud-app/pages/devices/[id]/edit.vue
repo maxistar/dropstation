@@ -37,13 +37,10 @@ const id = route.params.id;
 const deviceStore = useDeviceStore();
 
 const fetchDevice = async () => {
-  await deviceStore.fetchDevices();
-  const device = deviceStore.devices.find(device => device.id === Number(id));
-  if (device) {
-    name.value = device.name;
-    notes.value = device.notes;
-    deviceKey.value = device.device_key;
-  }
+  const device = await deviceStore.fetchDevice(Number(id));
+  name.value = device.name;
+  notes.value = device.notes;
+  deviceKey.value = device.deviceKey;
 };
 
 const updateDevice = async () => {

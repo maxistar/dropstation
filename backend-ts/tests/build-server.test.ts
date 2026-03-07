@@ -317,4 +317,225 @@ describe("buildServer", () => {
       checkInterval: 0,
     });
   });
+
+  it("serves a UI device detail", async () => {
+    const deviceRows = [
+      {
+        id: 9,
+        userId: 1,
+        placeId: 1,
+        deviceKey: "dev-9",
+        lastAccess: null,
+        notes: "Balcony controller",
+        battery: 3.9,
+        sleepDuration: 1800,
+        activityNumber: 4,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 600,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM devices d") && params?.[0] === 9) {
+            return [deviceRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/devices/9",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: 9,
+      name: "Balcony controller",
+      notes: "Balcony controller",
+      deviceKey: "dev-9",
+      lastAccess: null,
+      battery: 3.9,
+      sleepDuration: 1800,
+      activityNumber: 4,
+      recentEventTime: null,
+      recentEventId: null,
+      checkInterval: 600,
+    });
+  });
+
+  it("updates a UI device", async () => {
+    const existingDeviceRows = [
+      {
+        id: 12,
+        userId: 1,
+        placeId: null,
+        deviceKey: "old-key",
+        lastAccess: null,
+        notes: "Old notes",
+        battery: null,
+        sleepDuration: 0,
+        activityNumber: 0,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 0,
+      },
+    ];
+    const updatedDeviceRows = [
+      {
+        id: 12,
+        userId: 1,
+        placeId: null,
+        deviceKey: "new-key",
+        lastAccess: null,
+        notes: "Updated notes",
+        battery: null,
+        sleepDuration: 0,
+        activityNumber: 0,
+        recentEventTime: null,
+        recentEventId: null,
+        checkInterval: 0,
+      },
+    ];
+
+    let readCount = 0;
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM devices d") && params?.[0] === 12) {
+            readCount += 1;
+            return [readCount === 1 ? existingDeviceRows : updatedDeviceRows, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("UPDATE devices SET notes = ?, device_key = ? WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/devices/12",
+      payload: {
+        name: "Ignored Name",
+        notes: "Updated notes",
+        deviceKey: "new-key",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: 12,
+      name: "Updated notes",
+      notes: "Updated notes",
+      deviceKey: "new-key",
+      lastAccess: null,
+      battery: null,
+      sleepDuration: 0,
+      activityNumber: 0,
+      recentEventTime: null,
+      recentEventId: null,
+      checkInterval: 0,
+    });
+  });
+
+  it("deletes a UI device", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        execute: async (sql) => {
+          if (sql.includes("DELETE FROM devices WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/devices/15",
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.body).toBe("");
+  });
+
+  it("serves the UI points list", async () => {
+    const pointRows = [
+      {
+        id: 10,
+        userId: 1,
+        deviceId: 7,
+        plantId: 20,
+        capacityId: 2,
+        lastWatering: null,
+        notes: "Window pot",
+        wateringType: 0,
+        wateringValue: 50,
+        wateringHour: 8,
+        index: 1,
+        address: "04ABC20A",
+        status: "ok",
+        humidity: 55,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM points p")) {
+            return [pointRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/points",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 10,
+        name: "04ABC20A",
+        deviceId: 7,
+        plantId: 20,
+        capacityId: 2,
+        index: 1,
+        address: "04ABC20A",
+        status: "ok",
+        humidity: 55,
+        lastWatering: null,
+        notes: "Window pot",
+        wateringType: 0,
+        wateringValue: 50,
+        wateringHour: 8,
+      },
+    ]);
+  });
 });

@@ -27,6 +27,40 @@ export interface UiDeviceView {
   checkInterval: number;
 }
 
+export interface UiPointRecord {
+  id: number;
+  userId: number | null;
+  deviceId: number;
+  plantId: number | null;
+  capacityId: number | null;
+  lastWatering: string | null;
+  notes: string | null;
+  wateringType: number;
+  wateringValue: number;
+  wateringHour: number;
+  index: number;
+  address: string | null;
+  status: string | null;
+  humidity: number | null;
+}
+
+export interface UiPointView {
+  id: number;
+  name: string;
+  deviceId: number;
+  plantId: number | null;
+  capacityId: number | null;
+  index: number;
+  address: string | null;
+  status: string;
+  humidity: number | null;
+  lastWatering: string | null;
+  notes: string;
+  wateringType: number;
+  wateringValue: number;
+  wateringHour: number;
+}
+
 export interface CreateUiDeviceInput {
   name?: string;
   notes?: string;

@@ -1,61 +1,53 @@
-# Nuxt 3 Minimal Starter
+# Dropstation Nuxt Admin
+
+This application is the admin/UI client for Dropstation.
+
+It no longer owns the migrated device and point backend flows directly. Those flows are now served by `dropstation/backend-ts`, and Nuxt consumes them over HTTP.
 
 ## Setup
 
-Make sure to install the dependencies:
+Install dependencies:
 
 ```bash
 yarn install
 ```
 
-## Development Server
+## Local Development
 
-Start the development server on `http://localhost:3000`:
+Start the supporting services first:
 
 ```bash
+cd ..
+docker compose up -d db web phpmyadmin
+bash scripts/bootstrap-mysql8.sh
+cd backend-ts
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Then start the Nuxt app:
+
+```bash
+export NUXT_PUBLIC_BACKEND_TS_BASE_URL=http://localhost:3001
+cd ../nuxt-crud-app
 yarn dev
-
 ```
 
-## Production
+Nuxt runs on:
 
-Build the application for production:
+- `http://localhost:3000`
 
-```bash
-yarn build
+## Runtime Config
 
-```
+- `NUXT_PUBLIC_BACKEND_TS_BASE_URL`
+  - default: `http://localhost:3001`
+  - points Nuxt to the running `backend-ts` service
 
-Locally preview production build:
-
-```bash
-yarn preview
-```
-
-
-Testing
+## Validation
 
 ```bash
-
 yarn vitest
-
 ```
 
-
-- todo
-  - ✓ create a new starter `npx nuxi@latest init nuxt-crud-app-vitest`
-  - ✓ create a new project that looks like one from video
-  - ✓ transform project from video to the mine project
-    - ✓ add vuetify 
-    - ✓ add pinia
-    - ✓ add code with crud
-  - add authentication
-    - move module
-    - make it functionable
-
-
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
-
-
-
+The migrated device and point flows now depend on `backend-ts`. Remaining Nuxt-local SQL handlers are legacy-only and currently limited to not-yet-migrated areas such as places and capacitors.

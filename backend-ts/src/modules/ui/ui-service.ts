@@ -3,6 +3,8 @@ import { createUiRepositories } from "./ui-repositories.js";
 import type {
   CreateUiDeviceInput,
   UiDeviceRecord,
+  UiPointRecord,
+  UiPointView,
   UiDeviceView,
   UpdateUiDeviceInput,
 } from "./ui-types.js";
@@ -27,6 +29,11 @@ export class UiService {
     }
 
     return this.toDeviceView(device);
+  }
+
+  public async listPoints(): Promise<UiPointView[]> {
+    const points = await this.repositories.listPoints();
+    return points.map((point) => this.toPointView(point));
   }
 
   public async createDevice(input: CreateUiDeviceInput): Promise<UiDeviceView> {
@@ -76,6 +83,25 @@ export class UiService {
       checkInterval: device.checkInterval,
     };
   }
+
+  private toPointView(point: UiPointRecord): UiPointView {
+    return {
+      id: point.id,
+      name: buildPointName(point),
+      deviceId: point.deviceId,
+      plantId: point.plantId,
+      capacityId: point.capacityId,
+      index: point.index,
+      address: point.address,
+      status: point.status ?? "",
+      humidity: point.humidity,
+      lastWatering: point.lastWatering,
+      notes: point.notes ?? "",
+      wateringType: point.wateringType,
+      wateringValue: point.wateringValue,
+      wateringHour: point.wateringHour,
+    };
+  }
 }
 
 function buildDeviceName(device: UiDeviceRecord): string {
@@ -85,4 +111,12 @@ function buildDeviceName(device: UiDeviceRecord): string {
   }
 
   return `Device ${device.id}`;
+}
+
+function buildPointName(point: UiPointRecord): string {
+  if (point.address?.trim()) {
+    return point.address;
+  }
+
+  return `Point ${point.deviceId}.${point.index}`;
 }

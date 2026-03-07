@@ -1,5 +1,5 @@
 import { defineEventHandler } from 'h3';
-import pool from '../../db';
+import pool from '../legacy-db';
 
 export default defineEventHandler(async (event) => {
     const method = event.req.method;

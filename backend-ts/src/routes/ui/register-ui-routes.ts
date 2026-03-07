@@ -30,6 +30,10 @@ export function registerUiRoutes(
     return uiService.listDevices();
   });
 
+  app.get("/api/ui/v1/points", async () => {
+    return uiService.listPoints();
+  });
+
   app.get<{ Params: DeviceParams }>("/api/ui/v1/devices/:id", async (request, reply) => {
     const id = parseDeviceId(request.params.id);
 

@@ -27,6 +27,12 @@ export default defineNuxtConfig({
     storesDirs: ['./stores/**'],
   },
 
+  runtimeConfig: {
+    public: {
+      backendTsBaseUrl: process.env.NUXT_PUBLIC_BACKEND_TS_BASE_URL || 'http://localhost:3001',
+    },
+  },
+
   ssr: false,
 
   oauth: {
