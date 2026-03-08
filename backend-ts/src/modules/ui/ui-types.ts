@@ -61,6 +61,20 @@ export interface UiPointView {
   wateringHour: number;
 }
 
+export interface UiCapacitorRecord {
+  id: number;
+  userId: number | null;
+  capacity: number;
+  value: number;
+}
+
+export interface UiCapacitorView {
+  id: number;
+  userId: number | null;
+  capacity: number;
+  value: number;
+}
+
 export interface CreateUiDeviceInput {
   name?: string;
   notes?: string;
@@ -72,6 +86,19 @@ export interface UpdateUiDeviceInput {
   name?: string;
   notes?: string;
   deviceKey: string;
+}
+
+export interface CreateUiCapacitorInput {
+  userId?: number;
+  capacity: number;
+  value: number;
+}
+
+export interface UpdateUiCapacitorInput {
+  id: number;
+  userId?: number;
+  capacity: number;
+  value: number;
 }
 
 export interface DashboardPlantRecord {

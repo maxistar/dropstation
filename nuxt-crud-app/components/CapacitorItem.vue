@@ -1,7 +1,7 @@
 <template>
   <v-card class="device-item">
     <v-card-text class="device-info">
-      {{ device.id }}!
+      #{{ device.id }} Capacity: {{ device.capacity }} / Value: {{ device.value }}
     </v-card-text>
     <v-card-actions class="device-actions">
       <v-btn @click="$emit('edit', device.id)" color="primary">Edit</v-btn>
@@ -11,7 +11,7 @@
     <ConfirmationDialog
         :isOpen="dialog"
         title="Confirm Deletion"
-        message="Are you sure you want to delete this device?"
+        message="Are you sure you want to delete this capacitor?"
         @update:isOpen="dialog = $event"
         @confirm="confirmDelete"
     />

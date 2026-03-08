@@ -50,4 +50,4 @@ Nuxt runs on:
 yarn vitest
 ```
 
-The migrated device and point flows now depend on `backend-ts`. Remaining Nuxt-local SQL handlers are legacy-only and currently limited to not-yet-migrated areas such as places and capacitors.
+The migrated device, point, and capacitor flows now depend on `backend-ts`. Remaining Nuxt-local SQL handlers are legacy-only and currently limited to not-yet-migrated areas such as places.

@@ -26,6 +26,16 @@ interface UpsertDeviceBody {
   deviceKey?: string;
 }
 
+interface CapacitorParams {
+  id: string;
+}
+
+interface UpsertCapacitorBody {
+  userId?: number;
+  capacity?: number;
+  value?: number;
+}
+
 interface WaterPlantBody {
   duration?: number;
 }
@@ -78,6 +88,117 @@ export function registerUiRoutes(
   app.get("/api/ui/v1/points", { preHandler: requireUiAuth }, async () => {
     return uiService.listPoints();
   });
+
+  app.get("/api/ui/v1/capacitors", { preHandler: requireUiAuth }, async () => {
+    return uiService.listCapacitors();
+  });
+
+  app.get<{ Params: CapacitorParams }>(
+    "/api/ui/v1/capacitors/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid capacitor id" };
+      }
+
+      try {
+        return await uiService.getCapacitor(id);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Capacitor not found") {
+          reply.code(404);
+          return { error: "Capacitor not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: UpsertCapacitorBody }>(
+    "/api/ui/v1/capacitors",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const body = request.body ?? {};
+
+      if (!isValidNumber(body.capacity) || !isValidNumber(body.value)) {
+        reply.code(400);
+        return { error: "capacity and value are required numbers" };
+      }
+
+      const capacitor = await uiService.createCapacitor({
+        userId: body.userId,
+        capacity: Math.trunc(body.capacity),
+        value: Math.trunc(body.value),
+      });
+
+      reply.code(201);
+      return capacitor;
+    },
+  );
+
+  app.put<{ Params: CapacitorParams; Body: UpsertCapacitorBody }>(
+    "/api/ui/v1/capacitors/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid capacitor id" };
+      }
+
+      const body = request.body ?? {};
+      if (!isValidNumber(body.capacity) || !isValidNumber(body.value)) {
+        reply.code(400);
+        return { error: "capacity and value are required numbers" };
+      }
+
+      try {
+        return await uiService.updateCapacitor({
+          id,
+          userId: body.userId,
+          capacity: Math.trunc(body.capacity),
+          value: Math.trunc(body.value),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "Capacitor not found") {
+          reply.code(404);
+          return { error: "Capacitor not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Params: CapacitorParams }>(
+    "/api/ui/v1/capacitors/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid capacitor id" };
+      }
+
+      try {
+        await uiService.deleteCapacitor(id);
+        reply.code(204);
+        return null;
+      } catch (error) {
+        if (error instanceof Error && error.message === "Capacitor not found") {
+          reply.code(404);
+          return { error: "Capacitor not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
 
   app.get("/api/ui/v1/dashboard/plants", { preHandler: requireUiAuth }, async () => {
     return uiService.listDashboardPlants();
@@ -250,4 +371,8 @@ function normalizeDuration(rawDuration: number | undefined): number | null {
   }
 
   return duration;
+}
+
+function isValidNumber(value: number | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }

@@ -1,15 +1,19 @@
 import type { DatabaseContext } from "../../db/index.js";
 import { createUiRepositories } from "./ui-repositories.js";
 import type {
+  CreateUiCapacitorInput,
   CreateUiDeviceInput,
   DashboardPlantRecord,
   DashboardPlantView,
   DashboardTankRecord,
   DashboardTankView,
+  UiCapacitorRecord,
+  UiCapacitorView,
   UiDeviceRecord,
   UiPointRecord,
   UiPointView,
   UiDeviceView,
+  UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
 } from "./ui-types.js";
 
@@ -38,6 +42,21 @@ export class UiService {
   public async listPoints(): Promise<UiPointView[]> {
     const points = await this.repositories.listPoints();
     return points.map((point) => this.toPointView(point));
+  }
+
+  public async listCapacitors(): Promise<UiCapacitorView[]> {
+    const capacitors = await this.repositories.listCapacitors();
+    return capacitors.map((capacitor) => this.toCapacitorView(capacitor));
+  }
+
+  public async getCapacitor(id: number): Promise<UiCapacitorView> {
+    const capacitor = await this.repositories.findCapacitorById(id);
+
+    if (!capacitor) {
+      throw new Error("Capacitor not found");
+    }
+
+    return this.toCapacitorView(capacitor);
   }
 
   public async createDevice(input: CreateUiDeviceInput): Promise<UiDeviceView> {
@@ -69,6 +88,38 @@ export class UiService {
 
     if (!deleted) {
       throw new Error("Device not found");
+    }
+  }
+
+  public async createCapacitor(input: CreateUiCapacitorInput): Promise<UiCapacitorView> {
+    const createdId = await this.database.withTransaction(async (connection) => {
+      return this.repositories.createCapacitor(connection, input);
+    });
+
+    return this.getCapacitor(createdId);
+  }
+
+  public async updateCapacitor(input: UpdateUiCapacitorInput): Promise<UiCapacitorView> {
+    const existing = await this.repositories.findCapacitorById(input.id);
+
+    if (!existing) {
+      throw new Error("Capacitor not found");
+    }
+
+    await this.database.withTransaction(async (connection) => {
+      await this.repositories.updateCapacitor(connection, input);
+    });
+
+    return this.getCapacitor(input.id);
+  }
+
+  public async deleteCapacitor(id: number): Promise<void> {
+    const deleted = await this.database.withTransaction(async (connection) => {
+      return this.repositories.deleteCapacitor(connection, id);
+    });
+
+    if (!deleted) {
+      throw new Error("Capacitor not found");
     }
   }
 
@@ -128,6 +179,15 @@ export class UiService {
       wateringType: point.wateringType,
       wateringValue: point.wateringValue,
       wateringHour: point.wateringHour,
+    };
+  }
+
+  private toCapacitorView(capacitor: UiCapacitorRecord): UiCapacitorView {
+    return {
+      id: capacitor.id,
+      userId: capacitor.userId,
+      capacity: capacitor.capacity,
+      value: capacitor.value,
     };
   }
 

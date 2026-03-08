@@ -659,6 +659,180 @@ describe("buildServer", () => {
     ]);
   });
 
+  it("serves the UI capacitors list", async () => {
+    const capacitorRows = [
+      {
+        id: 3,
+        userId: 1,
+        capacity: 40000,
+        value: 36420,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM capacitors c") && sql.includes("ORDER BY c.id ASC")) {
+            return [capacitorRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/capacitors",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 3,
+        userId: 1,
+        capacity: 40000,
+        value: 36420,
+      },
+    ]);
+  });
+
+  it("creates, updates and deletes a UI capacitor", async () => {
+    const initialRow = [
+      {
+        id: 88,
+        userId: 1,
+        capacity: 5000,
+        value: 3000,
+      },
+    ];
+    const updatedRow = [
+      {
+        id: 88,
+        userId: 1,
+        capacity: 7000,
+        value: 4500,
+      },
+    ];
+    let readCount = 0;
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM capacitors c") && params?.[0] === 88) {
+            readCount += 1;
+            return [readCount === 1 ? initialRow : updatedRow, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("INSERT INTO capacitors")) {
+            return [{ insertId: 88 }, {}];
+          }
+          if (sql.includes("UPDATE capacitors SET user_id = ?, capacity = ?, value = ? WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+          if (sql.includes("DELETE FROM capacitors WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/capacitors",
+      headers: authHeaders,
+      payload: {
+        capacity: 5000,
+        value: 3000,
+      },
+    });
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toEqual({
+      id: 88,
+      userId: 1,
+      capacity: 5000,
+      value: 3000,
+    });
+
+    const updateResponse = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/capacitors/88",
+      headers: authHeaders,
+      payload: {
+        capacity: 7000,
+        value: 4500,
+      },
+    });
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toEqual({
+      id: 88,
+      userId: 1,
+      capacity: 7000,
+      value: 4500,
+    });
+
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/capacitors/88",
+      headers: authHeaders,
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+  });
+
+  it("returns validation and not-found errors for capacitor CRUD routes", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async () => [[], {}],
+        execute: async (sql) => {
+          if (sql.includes("DELETE FROM capacitors WHERE id = ?")) {
+            return [{ affectedRows: 0 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const invalidCreate = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/capacitors",
+      headers: authHeaders,
+      payload: {
+        value: 100,
+      },
+    });
+    expect(invalidCreate.statusCode).toBe(400);
+
+    const missingCapacitor = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/capacitors/9999",
+      headers: authHeaders,
+    });
+    expect(missingCapacitor.statusCode).toBe(404);
+
+    const missingDelete = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/capacitors/9999",
+      headers: authHeaders,
+    });
+    expect(missingDelete.statusCode).toBe(404);
+  });
+
   it("serves dashboard plants", async () => {
     const plantRows = [
       {
@@ -800,6 +974,12 @@ describe("buildServer", () => {
     expect(response.json()).toEqual({
       error: "Unauthorized",
     });
+
+    const capacitorResponse = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/capacitors",
+    });
+    expect(capacitorResponse.statusCode).toBe(401);
   });
 
   it("returns token for valid login by login/email and rejects invalid credentials", async () => {

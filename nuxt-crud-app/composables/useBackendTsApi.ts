@@ -32,10 +32,23 @@ export interface BackendTsPoint {
   wateringHour: number;
 }
 
+export interface BackendTsCapacitor {
+  id: number;
+  userId: number | null;
+  capacity: number;
+  value: number;
+}
+
 export interface BackendTsDeviceUpsertInput {
   name?: string;
   notes?: string;
   deviceKey: string;
+}
+
+export interface BackendTsCapacitorUpsertInput {
+  userId?: number;
+  capacity: number;
+  value: number;
 }
 
 export function useBackendTsApi() {
@@ -94,6 +107,34 @@ export function useBackendTsApi() {
 
     listPoints() {
       return client<BackendTsPoint[]>('/api/ui/v1/points')
+    },
+
+    listCapacitors() {
+      return client<BackendTsCapacitor[]>('/api/ui/v1/capacitors')
+    },
+
+    getCapacitor(id: number) {
+      return client<BackendTsCapacitor>(`/api/ui/v1/capacitors/${id}`)
+    },
+
+    createCapacitor(input: BackendTsCapacitorUpsertInput) {
+      return client<BackendTsCapacitor>('/api/ui/v1/capacitors', {
+        method: 'POST',
+        body: input,
+      })
+    },
+
+    updateCapacitor(id: number, input: BackendTsCapacitorUpsertInput) {
+      return client<BackendTsCapacitor>(`/api/ui/v1/capacitors/${id}`, {
+        method: 'PUT',
+        body: input,
+      })
+    },
+
+    deleteCapacitor(id: number) {
+      return client<void>(`/api/ui/v1/capacitors/${id}`, {
+        method: 'DELETE',
+      })
     },
   }
 }

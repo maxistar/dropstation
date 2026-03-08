@@ -2,11 +2,14 @@ import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { DatabasePool } from "../../db/create-mysql-pool.js";
 import type { PoolConnection } from "mysql2/promise";
 import type {
+  CreateUiCapacitorInput,
   CreateUiDeviceInput,
   DashboardPlantRecord,
   DashboardTankRecord,
+  UiCapacitorRecord,
   UiDeviceRecord,
   UiPointRecord,
+  UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
 } from "./ui-types.js";
 
@@ -42,6 +45,13 @@ interface UiPointRow extends RowDataPacket {
   humidity: number | null;
 }
 
+interface UiCapacitorRow extends RowDataPacket {
+  id: number;
+  userId: number | null;
+  capacity: number;
+  value: number;
+}
+
 interface DashboardPlantRow extends RowDataPacket {
   id: number;
   name: string | null;
@@ -65,9 +75,14 @@ export interface UiRepositories {
   listDevices(): Promise<UiDeviceRecord[]>;
   findDeviceById(id: number): Promise<UiDeviceRecord | null>;
   listPoints(): Promise<UiPointRecord[]>;
+  listCapacitors(): Promise<UiCapacitorRecord[]>;
+  findCapacitorById(id: number): Promise<UiCapacitorRecord | null>;
   createDevice(connection: PoolConnection, input: CreateUiDeviceInput): Promise<number>;
   updateDevice(connection: PoolConnection, input: UpdateUiDeviceInput): Promise<void>;
   deleteDevice(connection: PoolConnection, id: number): Promise<boolean>;
+  createCapacitor(connection: PoolConnection, input: CreateUiCapacitorInput): Promise<number>;
+  updateCapacitor(connection: PoolConnection, input: UpdateUiCapacitorInput): Promise<void>;
+  deleteCapacitor(connection: PoolConnection, id: number): Promise<boolean>;
   listDashboardPlants(): Promise<DashboardPlantRecord[]>;
   getDashboardTank(): Promise<DashboardTankRecord | null>;
   waterPlant(connection: PoolConnection, plantId: number, duration: number): Promise<boolean>;
@@ -151,6 +166,40 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
       return rows.map(mapUiPointRow);
     },
 
+    async listCapacitors() {
+      const [rows] = await pool.query<UiCapacitorRow[]>(
+        `
+          SELECT
+            c.id,
+            c.user_id AS userId,
+            c.capacity,
+            c.value
+          FROM capacitors c
+          ORDER BY c.id ASC
+        `,
+      );
+
+      return rows.map(mapUiCapacitorRow);
+    },
+
+    async findCapacitorById(id) {
+      const [rows] = await pool.query<UiCapacitorRow[]>(
+        `
+          SELECT
+            c.id,
+            c.user_id AS userId,
+            c.capacity,
+            c.value
+          FROM capacitors c
+          WHERE c.id = ?
+          LIMIT 1
+        `,
+        [id],
+      );
+
+      return rows[0] ? mapUiCapacitorRow(rows[0]) : null;
+    },
+
     async createDevice(connection, input) {
       const [result] = await connection.execute<ResultSetHeader>(
         "INSERT INTO devices (notes, device_key) VALUES (?, ?)",
@@ -170,6 +219,31 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
     async deleteDevice(connection, id) {
       const [result] = await connection.execute<ResultSetHeader>(
         "DELETE FROM devices WHERE id = ?",
+        [id],
+      );
+
+      return result.affectedRows > 0;
+    },
+
+    async createCapacitor(connection, input) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "INSERT INTO capacitors (user_id, capacity, value) VALUES (?, ?, ?)",
+        [input.userId ?? 1, input.capacity, input.value],
+      );
+
+      return result.insertId;
+    },
+
+    async updateCapacitor(connection, input) {
+      await connection.execute<ResultSetHeader>(
+        "UPDATE capacitors SET user_id = ?, capacity = ?, value = ? WHERE id = ?",
+        [input.userId ?? 1, input.capacity, input.value, input.id],
+      );
+    },
+
+    async deleteCapacitor(connection, id) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "DELETE FROM capacitors WHERE id = ?",
         [id],
       );
 
@@ -296,6 +370,15 @@ function mapUiPointRow(row: UiPointRow): UiPointRecord {
     address: row.address,
     status: row.status,
     humidity: row.humidity,
+  };
+}
+
+function mapUiCapacitorRow(row: UiCapacitorRow): UiCapacitorRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    capacity: row.capacity,
+    value: row.value,
   };
 }
 

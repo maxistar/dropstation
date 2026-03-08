@@ -1,15 +1,11 @@
 import { defineStore } from 'pinia';
-import type { BackendTsDevice, BackendTsPoint } from '~/composables/useBackendTsApi';
+import type { BackendTsCapacitor, BackendTsDevice, BackendTsPoint } from '~/composables/useBackendTsApi';
 import { useBackendTsApi } from '~/composables/useBackendTsApi';
 
 // Define the types for your state
 type Device = BackendTsDevice;
 
-interface Capacitor {
-    id: number;
-    type: string;
-    // Add other fields as needed
-}
+type Capacitor = BackendTsCapacitor;
 
 interface Place {
     id: number;
@@ -53,9 +49,15 @@ export const useDeviceStore = defineStore('deviceStore', {
         },
 
         async fetchCapacitors () {
-            const data  = await $fetch<Capacitor[]>('/api/capacitors');
+            const api = useBackendTsApi();
+            const data  = await api.listCapacitors();
             this.capacitors = data;
             return data;
+        },
+
+        async fetchCapacitor (id: number) {
+            const api = useBackendTsApi();
+            return api.getCapacitor(id);
         },
 
         async fetchPlaces () {
@@ -87,6 +89,24 @@ export const useDeviceStore = defineStore('deviceStore', {
             const api = useBackendTsApi();
             await api.deleteDevice(id);
             await this.fetchDevices();
+        },
+
+        async createCapacitor (capacity: number, value: number, userId?: number) {
+            const api = useBackendTsApi();
+            await api.createCapacitor({ capacity, value, userId });
+            await this.fetchCapacitors();
+        },
+
+        async updateCapacitor (id: number, capacity: number, value: number, userId?: number) {
+            const api = useBackendTsApi();
+            await api.updateCapacitor(id, { capacity, value, userId });
+            await this.fetchCapacitors();
+        },
+
+        async deleteCapacitor (id: number) {
+            const api = useBackendTsApi();
+            await api.deleteCapacitor(id);
+            await this.fetchCapacitors();
         },
     },
  });
