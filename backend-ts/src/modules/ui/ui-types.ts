@@ -16,6 +16,7 @@ export interface UiDeviceRecord {
 export interface UiDeviceView {
   id: number;
   name: string;
+  placeId: number | null;
   notes: string;
   deviceKey: string;
   lastAccess: string | null;
@@ -114,6 +115,8 @@ export interface UiPlantView {
 }
 
 export interface CreateUiDeviceInput {
+  userId?: number;
+  placeId: number;
   name?: string;
   notes?: string;
   deviceKey: string;
@@ -124,6 +127,7 @@ export interface CreateUiDeviceInput {
 
 export interface UpdateUiDeviceInput {
   id: number;
+  placeId: number;
   name?: string;
   notes?: string;
   deviceKey: string;

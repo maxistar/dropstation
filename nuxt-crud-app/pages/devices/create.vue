@@ -24,6 +24,15 @@
           required
       ></v-text-field>
       <div class="text-field-title">
+        Place ID
+      </div>
+      <v-text-field
+          v-model.number="placeId"
+          type="number"
+          label="Place ID"
+          required
+      ></v-text-field>
+      <div class="text-field-title">
         Sleep Duration (sec)
       </div>
       <v-text-field
@@ -64,6 +73,7 @@ import { VContainer, VForm, VTextField, VBtn } from 'vuetify/components';
 const name = ref('');
 const notes = ref('');
 const deviceKey = ref('');
+const placeId = ref(1);
 const sleepDuration = ref(3600);
 const activityNumber = ref(0);
 const checkInterval = ref(900);
@@ -71,13 +81,20 @@ const router = useRouter();
 const deviceStore = useDeviceStore();
 
 const createDevice = async () => {
+  const normalizedName = name.value.trim();
+  const normalizedNotes = notes.value.trim() || normalizedName;
+  const normalizedPayload = {
+    placeId: Math.trunc(Number(placeId.value)),
+    name: normalizedName,
+    notes: normalizedNotes,
+    deviceKey: deviceKey.value.trim(),
+    sleepDuration: Math.trunc(Number(sleepDuration.value)),
+    activityNumber: Math.trunc(Number(activityNumber.value)),
+    checkInterval: Math.trunc(Number(checkInterval.value)),
+  };
+
   await deviceStore.createDevice({
-    name: name.value,
-    notes: notes.value,
-    deviceKey: deviceKey.value,
-    sleepDuration: sleepDuration.value,
-    activityNumber: activityNumber.value,
-    checkInterval: checkInterval.value,
+    ...normalizedPayload,
   });
   router.push('/devices');
 };

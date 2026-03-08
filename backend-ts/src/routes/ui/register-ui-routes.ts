@@ -21,6 +21,8 @@ interface DashboardPlantParams {
 
 interface UpsertDeviceBody {
   id?: number;
+  userId?: number;
+  placeId?: number;
   name?: string;
   notes?: string;
   deviceKey?: string;
@@ -711,6 +713,10 @@ export function registerUiRoutes(
         reply.code(400);
         return { error: "deviceKey is required" };
       }
+      if (!isValidNumber(body.placeId)) {
+        reply.code(400);
+        return { error: "placeId is required number" };
+      }
       if (
         !isValidNumber(body.sleepDuration)
         || !isValidNumber(body.activityNumber)
@@ -721,6 +727,8 @@ export function registerUiRoutes(
       }
 
       const device = await uiService.createDevice({
+        userId: body.userId,
+        placeId: Math.trunc(body.placeId),
         name: body.name,
         notes: body.notes,
         deviceKey: body.deviceKey.trim(),
@@ -750,6 +758,10 @@ export function registerUiRoutes(
         reply.code(400);
         return { error: "deviceKey is required" };
       }
+      if (!isValidNumber(body.placeId)) {
+        reply.code(400);
+        return { error: "placeId is required number" };
+      }
       if (
         !isValidNumber(body.sleepDuration)
         || !isValidNumber(body.activityNumber)
@@ -762,6 +774,7 @@ export function registerUiRoutes(
       try {
         return await uiService.updateDevice({
           id,
+          placeId: Math.trunc(body.placeId),
           name: body.name,
           notes: body.notes,
           deviceKey: body.deviceKey.trim(),

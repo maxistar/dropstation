@@ -102,6 +102,7 @@ export const useDeviceStore = defineStore('deviceStore', {
         },
         
         async createDevice (input: {
+            placeId: number;
             name?: string;
             notes?: string;
             deviceKey: string;
@@ -110,11 +111,20 @@ export const useDeviceStore = defineStore('deviceStore', {
             checkInterval: number;
         }) {
             const api = useBackendTsApi();
-            await api.createDevice(input);
+            await api.createDevice({
+                placeId: Math.trunc(Number(input.placeId)),
+                name: input.name?.trim(),
+                notes: input.notes?.trim(),
+                deviceKey: input.deviceKey.trim(),
+                sleepDuration: Math.trunc(Number(input.sleepDuration)),
+                activityNumber: Math.trunc(Number(input.activityNumber)),
+                checkInterval: Math.trunc(Number(input.checkInterval)),
+            });
             await this.fetchDevices();
         },
 
         async updateDevice (id: number, input: {
+            placeId: number;
             name?: string;
             notes?: string;
             deviceKey: string;
@@ -123,7 +133,15 @@ export const useDeviceStore = defineStore('deviceStore', {
             checkInterval: number;
         }) {
             const api = useBackendTsApi();
-            await api.updateDevice(id, input);
+            await api.updateDevice(id, {
+                placeId: Math.trunc(Number(input.placeId)),
+                name: input.name?.trim(),
+                notes: input.notes?.trim(),
+                deviceKey: input.deviceKey.trim(),
+                sleepDuration: Math.trunc(Number(input.sleepDuration)),
+                activityNumber: Math.trunc(Number(input.activityNumber)),
+                checkInterval: Math.trunc(Number(input.checkInterval)),
+            });
             await this.fetchDevices();
         },
 

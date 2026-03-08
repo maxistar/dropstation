@@ -46,6 +46,7 @@ describe('deviceStore device actions', () => {
       {
         id: 1,
         name: 'Device 1',
+        placeId: 1,
         notes: 'Main controller',
         deviceKey: 'dev-1',
         lastAccess: null,
@@ -71,6 +72,7 @@ describe('deviceStore device actions', () => {
       {
         id: 2,
         name: 'Device 2',
+        placeId: 1,
         notes: 'Updated controller',
         deviceKey: 'dev-2',
         lastAccess: null,
@@ -89,6 +91,7 @@ describe('deviceStore device actions', () => {
     const store = useDeviceStore()
 
     await store.createDevice({
+      placeId: 1,
       name: 'Device 2',
       notes: 'Controller',
       deviceKey: 'dev-2',
@@ -97,6 +100,7 @@ describe('deviceStore device actions', () => {
       checkInterval: 300,
     })
     expect(apiMock.createDevice).toHaveBeenCalledWith({
+      placeId: 1,
       name: 'Device 2',
       notes: 'Controller',
       deviceKey: 'dev-2',
@@ -106,6 +110,7 @@ describe('deviceStore device actions', () => {
     })
 
     await store.updateDevice(2, {
+      placeId: 2,
       name: 'Device 2',
       notes: 'Updated controller',
       deviceKey: 'dev-2',
@@ -114,6 +119,7 @@ describe('deviceStore device actions', () => {
       checkInterval: 600,
     })
     expect(apiMock.updateDevice).toHaveBeenCalledWith(2, {
+      placeId: 2,
       name: 'Device 2',
       notes: 'Updated controller',
       deviceKey: 'dev-2',

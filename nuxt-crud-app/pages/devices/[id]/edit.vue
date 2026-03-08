@@ -18,6 +18,12 @@
           required
       ></v-text-field>
       <v-text-field
+          v-model.number="placeId"
+          type="number"
+          label="Place ID"
+          required
+      ></v-text-field>
+      <v-text-field
           v-model.number="sleepDuration"
           type="number"
           label="Sleep Duration (sec)"
@@ -49,6 +55,7 @@ import { VContainer, VForm, VTextField, VBtn } from 'vuetify/components';
 const name = ref('');
 const notes = ref('');
 const deviceKey = ref('');
+const placeId = ref(1);
 const sleepDuration = ref(0);
 const activityNumber = ref(0);
 const checkInterval = ref(0);
@@ -62,19 +69,27 @@ const fetchDevice = async () => {
   name.value = device.name;
   notes.value = device.notes;
   deviceKey.value = device.deviceKey;
+  placeId.value = device.placeId ?? 1;
   sleepDuration.value = device.sleepDuration;
   activityNumber.value = device.activityNumber;
   checkInterval.value = device.checkInterval;
 };
 
 const updateDevice = async () => {
+  const normalizedName = name.value.trim();
+  const normalizedNotes = notes.value.trim() || normalizedName;
+  const normalizedPayload = {
+    placeId: Math.trunc(Number(placeId.value)),
+    name: normalizedName,
+    notes: normalizedNotes,
+    deviceKey: deviceKey.value.trim(),
+    sleepDuration: Math.trunc(Number(sleepDuration.value)),
+    activityNumber: Math.trunc(Number(activityNumber.value)),
+    checkInterval: Math.trunc(Number(checkInterval.value)),
+  };
+
   await deviceStore.updateDevice(Number(id), {
-    name: name.value,
-    notes: notes.value,
-    deviceKey: deviceKey.value,
-    sleepDuration: sleepDuration.value,
-    activityNumber: activityNumber.value,
-    checkInterval: checkInterval.value,
+    ...normalizedPayload,
   });
   router.push('/devices');
 };

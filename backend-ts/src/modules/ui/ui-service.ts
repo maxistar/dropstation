@@ -297,6 +297,7 @@ export class UiService {
     return {
       id: device.id,
       name: buildDeviceName(device),
+      placeId: device.placeId,
       notes: device.notes ?? "",
       deviceKey: device.deviceKey,
       lastAccess: device.lastAccess,

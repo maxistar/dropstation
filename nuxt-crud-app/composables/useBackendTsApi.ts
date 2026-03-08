@@ -4,6 +4,7 @@ import { useAuthStore } from '~/stores/authStore'
 export interface BackendTsDevice {
   id: number;
   name: string;
+  placeId: number | null;
   notes: string;
   deviceKey: string;
   lastAccess: string | null;
@@ -59,6 +60,7 @@ export interface BackendTsPlant {
 }
 
 export interface BackendTsDeviceUpsertInput {
+  placeId: number;
   name?: string;
   notes?: string;
   deviceKey: string;

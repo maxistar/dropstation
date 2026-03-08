@@ -151,6 +151,7 @@ Device create/update payload required by Nuxt device admin:
 
 ```json
 {
+  "placeId": 1,
   "deviceKey": "dev-7",
   "notes": "Greenhouse controller",
   "sleepDuration": 3600,

@@ -350,6 +350,7 @@ describe("buildServer", () => {
       {
         id: 7,
         name: "Greenhouse controller",
+        placeId: 1,
         notes: "Greenhouse controller",
         deviceKey: "dev-7",
         lastAccess: null,
@@ -409,6 +410,7 @@ describe("buildServer", () => {
       headers: authHeaders,
       payload: {
         name: "Ignored UI Name",
+        placeId: 1,
         notes: "",
         deviceKey: "new-device",
         sleepDuration: 1200,
@@ -421,6 +423,7 @@ describe("buildServer", () => {
     expect(response.json()).toEqual({
       id: 42,
       name: "Device 42",
+      placeId: null,
       notes: "",
       deviceKey: "new-device",
       lastAccess: null,
@@ -476,6 +479,7 @@ describe("buildServer", () => {
     expect(response.json()).toEqual({
       id: 9,
       name: "Balcony controller",
+      placeId: 1,
       notes: "Balcony controller",
       deviceKey: "dev-9",
       lastAccess: null,
@@ -538,7 +542,7 @@ describe("buildServer", () => {
         execute: async (sql) => {
           if (
             sql.includes(
-              "UPDATE devices SET notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
+              "UPDATE devices SET place_id = ?, notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
             )
           ) {
             return [{ affectedRows: 1 }, {}];
@@ -557,6 +561,7 @@ describe("buildServer", () => {
       headers: authHeaders,
       payload: {
         name: "Ignored Name",
+        placeId: 2,
         notes: "Updated notes",
         deviceKey: "new-key",
         sleepDuration: 1800,
@@ -569,6 +574,7 @@ describe("buildServer", () => {
     expect(response.json()).toEqual({
       id: 12,
       name: "Updated notes",
+      placeId: null,
       notes: "Updated notes",
       deviceKey: "new-key",
       lastAccess: null,
@@ -625,7 +631,7 @@ describe("buildServer", () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
-      error: "sleepDuration, activityNumber and checkInterval are required numbers",
+      error: "placeId is required number",
     });
   });
 
