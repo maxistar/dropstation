@@ -833,6 +833,180 @@ describe("buildServer", () => {
     expect(missingDelete.statusCode).toBe(404);
   });
 
+  it("serves the UI places list", async () => {
+    const placeRows = [
+      {
+        id: 4,
+        userId: 1,
+        index: 2,
+        name: "Office",
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM places p") && sql.includes("ORDER BY p.num ASC, p.id ASC")) {
+            return [placeRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/places",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 4,
+        userId: 1,
+        index: 2,
+        name: "Office",
+      },
+    ]);
+  });
+
+  it("creates, updates and deletes a UI place", async () => {
+    const initialRow = [
+      {
+        id: 55,
+        userId: 1,
+        index: 2,
+        name: "Office",
+      },
+    ];
+    const updatedRow = [
+      {
+        id: 55,
+        userId: 1,
+        index: 3,
+        name: "Home Office",
+      },
+    ];
+    let readCount = 0;
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM places p") && params?.[0] === 55) {
+            readCount += 1;
+            return [readCount === 1 ? initialRow : updatedRow, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("INSERT INTO places")) {
+            return [{ insertId: 55 }, {}];
+          }
+          if (sql.includes("UPDATE places SET user_id = ?, num = ?, name = ? WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+          if (sql.includes("DELETE FROM places WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/places",
+      headers: authHeaders,
+      payload: {
+        index: 2,
+        name: "Office",
+      },
+    });
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toEqual({
+      id: 55,
+      userId: 1,
+      index: 2,
+      name: "Office",
+    });
+
+    const updateResponse = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/places/55",
+      headers: authHeaders,
+      payload: {
+        index: 3,
+        name: "Home Office",
+      },
+    });
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toEqual({
+      id: 55,
+      userId: 1,
+      index: 3,
+      name: "Home Office",
+    });
+
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/places/55",
+      headers: authHeaders,
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+  });
+
+  it("returns validation and not-found errors for place CRUD routes", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async () => [[], {}],
+        execute: async (sql) => {
+          if (sql.includes("DELETE FROM places WHERE id = ?")) {
+            return [{ affectedRows: 0 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const invalidCreate = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/places",
+      headers: authHeaders,
+      payload: {
+        name: "Office",
+      },
+    });
+    expect(invalidCreate.statusCode).toBe(400);
+
+    const missingPlace = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/places/9999",
+      headers: authHeaders,
+    });
+    expect(missingPlace.statusCode).toBe(404);
+
+    const missingDelete = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/places/9999",
+      headers: authHeaders,
+    });
+    expect(missingDelete.statusCode).toBe(404);
+  });
+
   it("serves dashboard plants", async () => {
     const plantRows = [
       {
@@ -980,6 +1154,12 @@ describe("buildServer", () => {
       url: "/api/ui/v1/capacitors",
     });
     expect(capacitorResponse.statusCode).toBe(401);
+
+    const placeResponse = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/places",
+    });
+    expect(placeResponse.statusCode).toBe(401);
   });
 
   it("returns token for valid login by login/email and rejects invalid credentials", async () => {

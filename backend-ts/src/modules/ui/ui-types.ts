@@ -75,6 +75,20 @@ export interface UiCapacitorView {
   value: number;
 }
 
+export interface UiPlaceRecord {
+  id: number;
+  userId: number | null;
+  index: number;
+  name: string;
+}
+
+export interface UiPlaceView {
+  id: number;
+  userId: number | null;
+  index: number;
+  name: string;
+}
+
 export interface CreateUiDeviceInput {
   name?: string;
   notes?: string;
@@ -99,6 +113,19 @@ export interface UpdateUiCapacitorInput {
   userId?: number;
   capacity: number;
   value: number;
+}
+
+export interface CreateUiPlaceInput {
+  userId?: number;
+  index: number;
+  name: string;
+}
+
+export interface UpdateUiPlaceInput {
+  id: number;
+  userId?: number;
+  index: number;
+  name: string;
 }
 
 export interface DashboardPlantRecord {

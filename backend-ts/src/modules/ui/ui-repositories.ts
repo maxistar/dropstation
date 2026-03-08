@@ -4,13 +4,16 @@ import type { PoolConnection } from "mysql2/promise";
 import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
+  CreateUiPlaceInput,
   DashboardPlantRecord,
   DashboardTankRecord,
   UiCapacitorRecord,
   UiDeviceRecord,
+  UiPlaceRecord,
   UiPointRecord,
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
+  UpdateUiPlaceInput,
 } from "./ui-types.js";
 
 interface UiDeviceRow extends RowDataPacket {
@@ -52,6 +55,13 @@ interface UiCapacitorRow extends RowDataPacket {
   value: number;
 }
 
+interface UiPlaceRow extends RowDataPacket {
+  id: number;
+  userId: number | null;
+  index: number;
+  name: string;
+}
+
 interface DashboardPlantRow extends RowDataPacket {
   id: number;
   name: string | null;
@@ -77,12 +87,17 @@ export interface UiRepositories {
   listPoints(): Promise<UiPointRecord[]>;
   listCapacitors(): Promise<UiCapacitorRecord[]>;
   findCapacitorById(id: number): Promise<UiCapacitorRecord | null>;
+  listPlaces(): Promise<UiPlaceRecord[]>;
+  findPlaceById(id: number): Promise<UiPlaceRecord | null>;
   createDevice(connection: PoolConnection, input: CreateUiDeviceInput): Promise<number>;
   updateDevice(connection: PoolConnection, input: UpdateUiDeviceInput): Promise<void>;
   deleteDevice(connection: PoolConnection, id: number): Promise<boolean>;
   createCapacitor(connection: PoolConnection, input: CreateUiCapacitorInput): Promise<number>;
   updateCapacitor(connection: PoolConnection, input: UpdateUiCapacitorInput): Promise<void>;
   deleteCapacitor(connection: PoolConnection, id: number): Promise<boolean>;
+  createPlace(connection: PoolConnection, input: CreateUiPlaceInput): Promise<number>;
+  updatePlace(connection: PoolConnection, input: UpdateUiPlaceInput): Promise<void>;
+  deletePlace(connection: PoolConnection, id: number): Promise<boolean>;
   listDashboardPlants(): Promise<DashboardPlantRecord[]>;
   getDashboardTank(): Promise<DashboardTankRecord | null>;
   waterPlant(connection: PoolConnection, plantId: number, duration: number): Promise<boolean>;
@@ -200,6 +215,40 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
       return rows[0] ? mapUiCapacitorRow(rows[0]) : null;
     },
 
+    async listPlaces() {
+      const [rows] = await pool.query<UiPlaceRow[]>(
+        `
+          SELECT
+            p.id,
+            p.user_id AS userId,
+            p.num AS \`index\`,
+            p.name
+          FROM places p
+          ORDER BY p.num ASC, p.id ASC
+        `,
+      );
+
+      return rows.map(mapUiPlaceRow);
+    },
+
+    async findPlaceById(id) {
+      const [rows] = await pool.query<UiPlaceRow[]>(
+        `
+          SELECT
+            p.id,
+            p.user_id AS userId,
+            p.num AS \`index\`,
+            p.name
+          FROM places p
+          WHERE p.id = ?
+          LIMIT 1
+        `,
+        [id],
+      );
+
+      return rows[0] ? mapUiPlaceRow(rows[0]) : null;
+    },
+
     async createDevice(connection, input) {
       const [result] = await connection.execute<ResultSetHeader>(
         "INSERT INTO devices (notes, device_key) VALUES (?, ?)",
@@ -244,6 +293,31 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
     async deleteCapacitor(connection, id) {
       const [result] = await connection.execute<ResultSetHeader>(
         "DELETE FROM capacitors WHERE id = ?",
+        [id],
+      );
+
+      return result.affectedRows > 0;
+    },
+
+    async createPlace(connection, input) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "INSERT INTO places (user_id, num, name) VALUES (?, ?, ?)",
+        [input.userId ?? 1, input.index, normalizeName(input.name)],
+      );
+
+      return result.insertId;
+    },
+
+    async updatePlace(connection, input) {
+      await connection.execute<ResultSetHeader>(
+        "UPDATE places SET user_id = ?, num = ?, name = ? WHERE id = ?",
+        [input.userId ?? 1, input.index, normalizeName(input.name), input.id],
+      );
+    },
+
+    async deletePlace(connection, id) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "DELETE FROM places WHERE id = ?",
         [id],
       );
 
@@ -382,6 +456,19 @@ function mapUiCapacitorRow(row: UiCapacitorRow): UiCapacitorRecord {
   };
 }
 
+function mapUiPlaceRow(row: UiPlaceRow): UiPlaceRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    index: row.index,
+    name: row.name,
+  };
+}
+
 function normalizeNotes(notes?: string): string {
   return notes?.trim() ?? "";
+}
+
+function normalizeName(name: string): string {
+  return name.trim();
 }

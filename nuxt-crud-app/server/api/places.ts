@@ -2,6 +2,8 @@ import { defineEventHandler } from 'h3';
 import pool from '../legacy-db';
 
 export default defineEventHandler(async (event) => {
+    // Legacy endpoint kept only for compatibility while migration rolls out.
+    // Active places admin flow now uses backend-ts `/api/ui/v1/places`.
     const method = event.req.method;
 
     if (method !== 'GET') {

@@ -40,6 +40,16 @@ interface WaterPlantBody {
   duration?: number;
 }
 
+interface PlaceParams {
+  id: string;
+}
+
+interface UpsertPlaceBody {
+  userId?: number;
+  index?: number;
+  name?: string;
+}
+
 export function registerUiRoutes(
   app: FastifyInstance,
   database: DatabaseContext,
@@ -88,6 +98,117 @@ export function registerUiRoutes(
   app.get("/api/ui/v1/points", { preHandler: requireUiAuth }, async () => {
     return uiService.listPoints();
   });
+
+  app.get("/api/ui/v1/places", { preHandler: requireUiAuth }, async () => {
+    return uiService.listPlaces();
+  });
+
+  app.get<{ Params: PlaceParams }>(
+    "/api/ui/v1/places/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid place id" };
+      }
+
+      try {
+        return await uiService.getPlace(id);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Place not found") {
+          reply.code(404);
+          return { error: "Place not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: UpsertPlaceBody }>(
+    "/api/ui/v1/places",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const body = request.body ?? {};
+
+      if (!isValidNumber(body.index) || !body.name?.trim()) {
+        reply.code(400);
+        return { error: "index and name are required" };
+      }
+
+      const place = await uiService.createPlace({
+        userId: body.userId,
+        index: Math.trunc(body.index),
+        name: body.name.trim(),
+      });
+
+      reply.code(201);
+      return place;
+    },
+  );
+
+  app.put<{ Params: PlaceParams; Body: UpsertPlaceBody }>(
+    "/api/ui/v1/places/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid place id" };
+      }
+
+      const body = request.body ?? {};
+      if (!isValidNumber(body.index) || !body.name?.trim()) {
+        reply.code(400);
+        return { error: "index and name are required" };
+      }
+
+      try {
+        return await uiService.updatePlace({
+          id,
+          userId: body.userId,
+          index: Math.trunc(body.index),
+          name: body.name.trim(),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "Place not found") {
+          reply.code(404);
+          return { error: "Place not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Params: PlaceParams }>(
+    "/api/ui/v1/places/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid place id" };
+      }
+
+      try {
+        await uiService.deletePlace(id);
+        reply.code(204);
+        return null;
+      } catch (error) {
+        if (error instanceof Error && error.message === "Place not found") {
+          reply.code(404);
+          return { error: "Place not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
 
   app.get("/api/ui/v1/capacitors", { preHandler: requireUiAuth }, async () => {
     return uiService.listCapacitors();

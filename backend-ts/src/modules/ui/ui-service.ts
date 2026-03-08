@@ -3,6 +3,7 @@ import { createUiRepositories } from "./ui-repositories.js";
 import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
+  CreateUiPlaceInput,
   DashboardPlantRecord,
   DashboardPlantView,
   DashboardTankRecord,
@@ -11,10 +12,13 @@ import type {
   UiCapacitorView,
   UiDeviceRecord,
   UiPointRecord,
+  UiPlaceRecord,
+  UiPlaceView,
   UiPointView,
   UiDeviceView,
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
+  UpdateUiPlaceInput,
 } from "./ui-types.js";
 
 export class UiService {
@@ -57,6 +61,21 @@ export class UiService {
     }
 
     return this.toCapacitorView(capacitor);
+  }
+
+  public async listPlaces(): Promise<UiPlaceView[]> {
+    const places = await this.repositories.listPlaces();
+    return places.map((place) => this.toPlaceView(place));
+  }
+
+  public async getPlace(id: number): Promise<UiPlaceView> {
+    const place = await this.repositories.findPlaceById(id);
+
+    if (!place) {
+      throw new Error("Place not found");
+    }
+
+    return this.toPlaceView(place);
   }
 
   public async createDevice(input: CreateUiDeviceInput): Promise<UiDeviceView> {
@@ -120,6 +139,38 @@ export class UiService {
 
     if (!deleted) {
       throw new Error("Capacitor not found");
+    }
+  }
+
+  public async createPlace(input: CreateUiPlaceInput): Promise<UiPlaceView> {
+    const createdId = await this.database.withTransaction(async (connection) => {
+      return this.repositories.createPlace(connection, input);
+    });
+
+    return this.getPlace(createdId);
+  }
+
+  public async updatePlace(input: UpdateUiPlaceInput): Promise<UiPlaceView> {
+    const existing = await this.repositories.findPlaceById(input.id);
+
+    if (!existing) {
+      throw new Error("Place not found");
+    }
+
+    await this.database.withTransaction(async (connection) => {
+      await this.repositories.updatePlace(connection, input);
+    });
+
+    return this.getPlace(input.id);
+  }
+
+  public async deletePlace(id: number): Promise<void> {
+    const deleted = await this.database.withTransaction(async (connection) => {
+      return this.repositories.deletePlace(connection, id);
+    });
+
+    if (!deleted) {
+      throw new Error("Place not found");
     }
   }
 
@@ -188,6 +239,15 @@ export class UiService {
       userId: capacitor.userId,
       capacity: capacitor.capacity,
       value: capacitor.value,
+    };
+  }
+
+  private toPlaceView(place: UiPlaceRecord): UiPlaceView {
+    return {
+      id: place.id,
+      userId: place.userId,
+      index: place.index,
+      name: place.name.trim() || `Place ${place.id}`,
     };
   }
 

@@ -39,6 +39,13 @@ export interface BackendTsCapacitor {
   value: number;
 }
 
+export interface BackendTsPlace {
+  id: number;
+  userId: number | null;
+  index: number;
+  name: string;
+}
+
 export interface BackendTsDeviceUpsertInput {
   name?: string;
   notes?: string;
@@ -49,6 +56,12 @@ export interface BackendTsCapacitorUpsertInput {
   userId?: number;
   capacity: number;
   value: number;
+}
+
+export interface BackendTsPlaceUpsertInput {
+  userId?: number;
+  index: number;
+  name: string;
 }
 
 export function useBackendTsApi() {
@@ -107,6 +120,34 @@ export function useBackendTsApi() {
 
     listPoints() {
       return client<BackendTsPoint[]>('/api/ui/v1/points')
+    },
+
+    listPlaces() {
+      return client<BackendTsPlace[]>('/api/ui/v1/places')
+    },
+
+    getPlace(id: number) {
+      return client<BackendTsPlace>(`/api/ui/v1/places/${id}`)
+    },
+
+    createPlace(input: BackendTsPlaceUpsertInput) {
+      return client<BackendTsPlace>('/api/ui/v1/places', {
+        method: 'POST',
+        body: input,
+      })
+    },
+
+    updatePlace(id: number, input: BackendTsPlaceUpsertInput) {
+      return client<BackendTsPlace>(`/api/ui/v1/places/${id}`, {
+        method: 'PUT',
+        body: input,
+      })
+    },
+
+    deletePlace(id: number) {
+      return client<void>(`/api/ui/v1/places/${id}`, {
+        method: 'DELETE',
+      })
     },
 
     listCapacitors() {

@@ -1,17 +1,12 @@
 import { defineStore } from 'pinia';
-import type { BackendTsCapacitor, BackendTsDevice, BackendTsPoint } from '~/composables/useBackendTsApi';
+import type { BackendTsCapacitor, BackendTsDevice, BackendTsPlace, BackendTsPoint } from '~/composables/useBackendTsApi';
 import { useBackendTsApi } from '~/composables/useBackendTsApi';
 
 // Define the types for your state
 type Device = BackendTsDevice;
 
 type Capacitor = BackendTsCapacitor;
-
-interface Place {
-    id: number;
-    location: string;
-    // Add other fields as needed
-}
+type Place = BackendTsPlace;
 
 type Point = BackendTsPoint;
 
@@ -61,9 +56,15 @@ export const useDeviceStore = defineStore('deviceStore', {
         },
 
         async fetchPlaces () {
-            const data  = await $fetch<Place[]>('/api/places');
+            const api = useBackendTsApi();
+            const data  = await api.listPlaces();
             this.places = data;
             return data;
+        },
+
+        async fetchPlace (id: number) {
+            const api = useBackendTsApi();
+            return api.getPlace(id);
         },
 
         async fetchPoints () {
@@ -107,6 +108,24 @@ export const useDeviceStore = defineStore('deviceStore', {
             const api = useBackendTsApi();
             await api.deleteCapacitor(id);
             await this.fetchCapacitors();
+        },
+
+        async createPlace (index: number, name: string, userId?: number) {
+            const api = useBackendTsApi();
+            await api.createPlace({ index, name, userId });
+            await this.fetchPlaces();
+        },
+
+        async updatePlace (id: number, index: number, name: string, userId?: number) {
+            const api = useBackendTsApi();
+            await api.updatePlace(id, { index, name, userId });
+            await this.fetchPlaces();
+        },
+
+        async deletePlace (id: number) {
+            const api = useBackendTsApi();
+            await api.deletePlace(id);
+            await this.fetchPlaces();
         },
     },
  });

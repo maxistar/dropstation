@@ -105,6 +105,7 @@ Protected endpoints in this iteration:
 
 - `/api/ui/v1/devices` (+ by-id/create/update/delete)
 - `/api/ui/v1/capacitors` (+ by-id/create/update/delete)
+- `/api/ui/v1/places` (+ by-id/create/update/delete)
 - `/api/ui/v1/points`
 - `/api/ui/v1/dashboard/plants`
 - `/api/ui/v1/dashboard/water-tank`
@@ -138,6 +139,7 @@ Use `Authorization: Bearer $TOKEN` for protected routes:
 ```bash
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/devices"
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/capacitors"
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/places"
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/points"
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboard/plants"
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboard/water-tank"
@@ -149,4 +151,4 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboar
 - TypeScript is the primary backend implementation target
 - behavior can be compared against the PHP runtime while migration continues
 - the long-term goal is to retire the PHP backend after the TypeScript backend covers the required workflows
-- Nuxt now consumes migrated device and point admin flows through `backend-ts` rather than Nuxt-local SQL handlers
+- Nuxt now consumes migrated device, point, capacitor, and place admin flows through `backend-ts` rather than Nuxt-local SQL handlers
