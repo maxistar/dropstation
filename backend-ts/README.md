@@ -147,6 +147,18 @@ curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboar
 curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboard/water-tank"
 ```
 
+Device create/update payload required by Nuxt device admin:
+
+```json
+{
+  "deviceKey": "dev-7",
+  "notes": "Greenhouse controller",
+  "sleepDuration": 3600,
+  "activityNumber": 2,
+  "checkInterval": 900
+}
+```
+
 ## Coexistence with PHP
 
 - PHP remains available as the legacy backend during transition

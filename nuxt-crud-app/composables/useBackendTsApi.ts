@@ -62,6 +62,9 @@ export interface BackendTsDeviceUpsertInput {
   name?: string;
   notes?: string;
   deviceKey: string;
+  sleepDuration: number;
+  activityNumber: number;
+  checkInterval: number;
 }
 
 export interface BackendTsCapacitorUpsertInput {

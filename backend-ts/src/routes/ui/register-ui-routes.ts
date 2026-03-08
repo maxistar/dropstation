@@ -24,6 +24,9 @@ interface UpsertDeviceBody {
   name?: string;
   notes?: string;
   deviceKey?: string;
+  sleepDuration?: number;
+  activityNumber?: number;
+  checkInterval?: number;
 }
 
 interface CapacitorParams {
@@ -708,11 +711,22 @@ export function registerUiRoutes(
         reply.code(400);
         return { error: "deviceKey is required" };
       }
+      if (
+        !isValidNumber(body.sleepDuration)
+        || !isValidNumber(body.activityNumber)
+        || !isValidNumber(body.checkInterval)
+      ) {
+        reply.code(400);
+        return { error: "sleepDuration, activityNumber and checkInterval are required numbers" };
+      }
 
       const device = await uiService.createDevice({
         name: body.name,
         notes: body.notes,
         deviceKey: body.deviceKey.trim(),
+        sleepDuration: Math.trunc(body.sleepDuration),
+        activityNumber: Math.trunc(body.activityNumber),
+        checkInterval: Math.trunc(body.checkInterval),
       });
 
       reply.code(201);
@@ -736,6 +750,14 @@ export function registerUiRoutes(
         reply.code(400);
         return { error: "deviceKey is required" };
       }
+      if (
+        !isValidNumber(body.sleepDuration)
+        || !isValidNumber(body.activityNumber)
+        || !isValidNumber(body.checkInterval)
+      ) {
+        reply.code(400);
+        return { error: "sleepDuration, activityNumber and checkInterval are required numbers" };
+      }
 
       try {
         return await uiService.updateDevice({
@@ -743,6 +765,9 @@ export function registerUiRoutes(
           name: body.name,
           notes: body.notes,
           deviceKey: body.deviceKey.trim(),
+          sleepDuration: Math.trunc(body.sleepDuration),
+          activityNumber: Math.trunc(body.activityNumber),
+          checkInterval: Math.trunc(body.checkInterval),
         });
       } catch (error) {
         if (error instanceof Error && error.message === "Device not found") {

@@ -117,6 +117,9 @@ export interface CreateUiDeviceInput {
   name?: string;
   notes?: string;
   deviceKey: string;
+  sleepDuration: number;
+  activityNumber: number;
+  checkInterval: number;
 }
 
 export interface UpdateUiDeviceInput {
@@ -124,6 +127,9 @@ export interface UpdateUiDeviceInput {
   name?: string;
   notes?: string;
   deviceKey: string;
+  sleepDuration: number;
+  activityNumber: number;
+  checkInterval: number;
 }
 
 export interface CreateUiCapacitorInput {

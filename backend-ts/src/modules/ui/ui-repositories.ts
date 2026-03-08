@@ -350,8 +350,8 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
 
     async createDevice(connection, input) {
       const [result] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO devices (notes, device_key) VALUES (?, ?)",
-        [normalizeNotes(input.notes), input.deviceKey],
+        "INSERT INTO devices (notes, device_key, sleep_duration, activity_number, check_interval) VALUES (?, ?, ?, ?, ?)",
+        [normalizeNotes(input.notes), input.deviceKey, input.sleepDuration, input.activityNumber, input.checkInterval],
       );
 
       return result.insertId;
@@ -359,8 +359,15 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
 
     async updateDevice(connection, input) {
       await connection.execute<ResultSetHeader>(
-        "UPDATE devices SET notes = ?, device_key = ? WHERE id = ?",
-        [normalizeNotes(input.notes), input.deviceKey, input.id],
+        "UPDATE devices SET notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
+        [
+          normalizeNotes(input.notes),
+          input.deviceKey,
+          input.sleepDuration,
+          input.activityNumber,
+          input.checkInterval,
+          input.id,
+        ],
       );
     },
 

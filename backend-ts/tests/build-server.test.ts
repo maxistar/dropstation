@@ -411,6 +411,9 @@ describe("buildServer", () => {
         name: "Ignored UI Name",
         notes: "",
         deviceKey: "new-device",
+        sleepDuration: 1200,
+        activityNumber: 3,
+        checkInterval: 300,
       },
     });
 
@@ -533,7 +536,11 @@ describe("buildServer", () => {
           return [[], {}];
         },
         execute: async (sql) => {
-          if (sql.includes("UPDATE devices SET notes = ?, device_key = ? WHERE id = ?")) {
+          if (
+            sql.includes(
+              "UPDATE devices SET notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
+            )
+          ) {
             return [{ affectedRows: 1 }, {}];
           }
 
@@ -552,6 +559,9 @@ describe("buildServer", () => {
         name: "Ignored Name",
         notes: "Updated notes",
         deviceKey: "new-key",
+        sleepDuration: 1800,
+        activityNumber: 4,
+        checkInterval: 450,
       },
     });
 
@@ -595,6 +605,28 @@ describe("buildServer", () => {
 
     expect(response.statusCode).toBe(204);
     expect(response.body).toBe("");
+  });
+
+  it("rejects UI device update when required numeric fields are missing", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/devices/12",
+      headers: authHeaders,
+      payload: {
+        name: "Ignored Name",
+        notes: "Updated notes",
+        deviceKey: "new-key",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      error: "sleepDuration, activityNumber and checkInterval are required numbers",
+    });
   });
 
   it("serves the UI points list", async () => {

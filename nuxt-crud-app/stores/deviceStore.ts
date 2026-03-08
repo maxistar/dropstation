@@ -101,15 +101,29 @@ export const useDeviceStore = defineStore('deviceStore', {
             return api.getPlant(id);
         },
         
-        async createDevice (name: string, notes: string, deviceKey: string) {
+        async createDevice (input: {
+            name?: string;
+            notes?: string;
+            deviceKey: string;
+            sleepDuration: number;
+            activityNumber: number;
+            checkInterval: number;
+        }) {
             const api = useBackendTsApi();
-            await api.createDevice({ name, notes, deviceKey });
+            await api.createDevice(input);
             await this.fetchDevices();
         },
 
-        async updateDevice (id: number, name: string, notes: string, deviceKey: string) {
+        async updateDevice (id: number, input: {
+            name?: string;
+            notes?: string;
+            deviceKey: string;
+            sleepDuration: number;
+            activityNumber: number;
+            checkInterval: number;
+        }) {
             const api = useBackendTsApi();
-            await api.updateDevice(id, { name, notes, deviceKey });
+            await api.updateDevice(id, input);
             await this.fetchDevices();
         },
 
