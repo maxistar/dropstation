@@ -3,6 +3,7 @@ import { createUiRepositories } from "./ui-repositories.js";
 import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
+  CreateUiPlantInput,
   CreateUiPlaceInput,
   CreateUiPointInput,
   DashboardPlantRecord,
@@ -12,6 +13,8 @@ import type {
   UiCapacitorRecord,
   UiCapacitorView,
   UiDeviceRecord,
+  UiPlantRecord,
+  UiPlantView,
   UiPointRecord,
   UiPlaceRecord,
   UiPlaceView,
@@ -19,6 +22,7 @@ import type {
   UiDeviceView,
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
+  UpdateUiPlantInput,
   UpdateUiPlaceInput,
   UpdateUiPointInput,
 } from "./ui-types.js";
@@ -88,6 +92,21 @@ export class UiService {
     }
 
     return this.toPlaceView(place);
+  }
+
+  public async listPlants(): Promise<UiPlantView[]> {
+    const plants = await this.repositories.listPlants();
+    return plants.map((plant) => this.toPlantView(plant));
+  }
+
+  public async getPlant(id: number): Promise<UiPlantView> {
+    const plant = await this.repositories.findPlantById(id);
+
+    if (!plant) {
+      throw new Error("Plant not found");
+    }
+
+    return this.toPlantView(plant);
   }
 
   public async createDevice(input: CreateUiDeviceInput): Promise<UiDeviceView> {
@@ -218,6 +237,38 @@ export class UiService {
     }
   }
 
+  public async createPlant(input: CreateUiPlantInput): Promise<UiPlantView> {
+    const createdId = await this.database.withTransaction(async (connection) => {
+      return this.repositories.createPlant(connection, input);
+    });
+
+    return this.getPlant(createdId);
+  }
+
+  public async updatePlant(input: UpdateUiPlantInput): Promise<UiPlantView> {
+    const existing = await this.repositories.findPlantById(input.id);
+
+    if (!existing) {
+      throw new Error("Plant not found");
+    }
+
+    await this.database.withTransaction(async (connection) => {
+      await this.repositories.updatePlant(connection, input);
+    });
+
+    return this.getPlant(input.id);
+  }
+
+  public async deletePlant(id: number): Promise<void> {
+    const deleted = await this.database.withTransaction(async (connection) => {
+      return this.repositories.deletePlant(connection, id);
+    });
+
+    if (!deleted) {
+      throw new Error("Plant not found");
+    }
+  }
+
   public async listDashboardPlants(): Promise<DashboardPlantView[]> {
     const plants = await this.repositories.listDashboardPlants();
     return plants.map((plant) => this.toDashboardPlantView(plant));
@@ -292,6 +343,20 @@ export class UiService {
       userId: place.userId,
       index: place.index,
       name: place.name.trim() || `Place ${place.id}`,
+    };
+  }
+
+  private toPlantView(plant: UiPlantRecord): UiPlantView {
+    return {
+      id: plant.id,
+      userId: plant.userId,
+      name: plant.name.trim() || `Plant ${plant.id}`,
+      species: plant.species?.trim() || "",
+      location: plant.location?.trim() || "",
+      targetHumidityMin: plant.targetHumidityMin,
+      targetHumidityMax: plant.targetHumidityMax,
+      targetWateringDurationSec: plant.targetWateringDurationSec,
+      active: plant.active,
     };
   }
 

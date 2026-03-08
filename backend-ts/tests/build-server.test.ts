@@ -1199,6 +1199,231 @@ describe("buildServer", () => {
     expect(missingDelete.statusCode).toBe(404);
   });
 
+  it("serves the UI plants list", async () => {
+    const plantRows = [
+      {
+        id: 9,
+        userId: 1,
+        name: "Monstera",
+        species: "Monstera deliciosa",
+        location: "Living room",
+        targetHumidityMin: 45,
+        targetHumidityMax: 65,
+        targetWateringDurationSec: 40,
+        active: 1,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM plants p") && sql.includes("ORDER BY p.id ASC")) {
+            return [plantRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/plants",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 9,
+        userId: 1,
+        name: "Monstera",
+        species: "Monstera deliciosa",
+        location: "Living room",
+        targetHumidityMin: 45,
+        targetHumidityMax: 65,
+        targetWateringDurationSec: 40,
+        active: true,
+      },
+    ]);
+  });
+
+  it("creates, updates and deletes a UI plant", async () => {
+    const initialRow = [
+      {
+        id: 77,
+        userId: 1,
+        name: "Monstera",
+        species: "Monstera deliciosa",
+        location: "Living room",
+        targetHumidityMin: 45,
+        targetHumidityMax: 65,
+        targetWateringDurationSec: 40,
+        active: 1,
+      },
+    ];
+    const updatedRow = [
+      {
+        id: 77,
+        userId: 1,
+        name: "Snake Plant",
+        species: "Dracaena trifasciata",
+        location: "Office",
+        targetHumidityMin: 35,
+        targetHumidityMax: 55,
+        targetWateringDurationSec: 25,
+        active: 0,
+      },
+    ];
+    let readCount = 0;
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM plants p") && params?.[0] === 77) {
+            readCount += 1;
+            return [readCount === 1 ? initialRow : updatedRow, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("INSERT INTO plants")) {
+            return [{ insertId: 77 }, {}];
+          }
+          if (sql.includes("UPDATE plants SET")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+          if (sql.includes("DELETE FROM plants WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/plants",
+      headers: authHeaders,
+      payload: {
+        name: "Monstera",
+        species: "Monstera deliciosa",
+        location: "Living room",
+        targetHumidityMin: 45,
+        targetHumidityMax: 65,
+        targetWateringDurationSec: 40,
+        active: true,
+      },
+    });
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toEqual({
+      id: 77,
+      userId: 1,
+      name: "Monstera",
+      species: "Monstera deliciosa",
+      location: "Living room",
+      targetHumidityMin: 45,
+      targetHumidityMax: 65,
+      targetWateringDurationSec: 40,
+      active: true,
+    });
+
+    const updateResponse = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/plants/77",
+      headers: authHeaders,
+      payload: {
+        name: "Snake Plant",
+        species: "Dracaena trifasciata",
+        location: "Office",
+        targetHumidityMin: 35,
+        targetHumidityMax: 55,
+        targetWateringDurationSec: 25,
+        active: false,
+      },
+    });
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toEqual({
+      id: 77,
+      userId: 1,
+      name: "Snake Plant",
+      species: "Dracaena trifasciata",
+      location: "Office",
+      targetHumidityMin: 35,
+      targetHumidityMax: 55,
+      targetWateringDurationSec: 25,
+      active: false,
+    });
+
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/plants/77",
+      headers: authHeaders,
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+  });
+
+  it("returns validation and not-found errors for plant CRUD routes", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async () => [[], {}],
+        execute: async (sql) => {
+          if (sql.includes("DELETE FROM plants WHERE id = ?")) {
+            return [{ affectedRows: 0 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const invalidCreate = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/plants",
+      headers: authHeaders,
+      payload: {
+        location: "No name",
+      },
+    });
+    expect(invalidCreate.statusCode).toBe(400);
+
+    const invalidUpdate = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/plants/5",
+      headers: authHeaders,
+      payload: {
+        name: "Monstera",
+        targetHumidityMin: "invalid",
+      },
+    });
+    expect(invalidUpdate.statusCode).toBe(400);
+
+    const missingPlant = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/plants/9999",
+      headers: authHeaders,
+    });
+    expect(missingPlant.statusCode).toBe(404);
+
+    const missingDelete = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/plants/9999",
+      headers: authHeaders,
+    });
+    expect(missingDelete.statusCode).toBe(404);
+  });
+
   it("serves dashboard plants", async () => {
     const plantRows = [
       {
@@ -1358,6 +1583,12 @@ describe("buildServer", () => {
       url: "/api/ui/v1/points",
     });
     expect(pointResponse.statusCode).toBe(401);
+
+    const plantResponse = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/plants",
+    });
+    expect(plantResponse.statusCode).toBe(401);
   });
 
   it("returns token for valid login by login/email and rejects invalid credentials", async () => {

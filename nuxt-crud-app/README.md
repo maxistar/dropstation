@@ -2,7 +2,7 @@
 
 This application is the admin/UI client for Dropstation.
 
-It no longer owns migrated admin backend flows directly. Device, point, capacitor, and place flows are served by `dropstation/backend-ts`, and Nuxt consumes them over HTTP.
+It no longer owns migrated admin backend flows directly. Device, point, capacitor, place, and plant flows are served by `dropstation/backend-ts`, and Nuxt consumes them over HTTP.
 
 ## Setup
 
@@ -50,4 +50,4 @@ Nuxt runs on:
 yarn vitest
 ```
 
-The migrated device, point, capacitor, and place flows now depend on `backend-ts`. Remaining Nuxt-local SQL handlers are legacy-only compatibility endpoints and are not used by active admin flows.
+The migrated device, point, capacitor, place, and plant flows now depend on `backend-ts`. Remaining Nuxt-local SQL handlers are legacy-only compatibility endpoints and are not used by active admin flows.

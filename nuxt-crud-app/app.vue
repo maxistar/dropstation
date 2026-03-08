@@ -9,6 +9,7 @@
             <nuxt-link to="/capacitors">Capacitors</nuxt-link>
             <nuxt-link to="/places">Places</nuxt-link>
             <nuxt-link to="/points">Points</nuxt-link>
+            <nuxt-link to="/plants">Plants</nuxt-link>
           </nav>
         </header>
         <main>

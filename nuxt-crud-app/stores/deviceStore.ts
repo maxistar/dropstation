@@ -1,5 +1,11 @@
 import { defineStore } from 'pinia';
-import type { BackendTsCapacitor, BackendTsDevice, BackendTsPlace, BackendTsPoint } from '~/composables/useBackendTsApi';
+import type {
+    BackendTsCapacitor,
+    BackendTsDevice,
+    BackendTsPlace,
+    BackendTsPlant,
+    BackendTsPoint,
+} from '~/composables/useBackendTsApi';
 import { useBackendTsApi } from '~/composables/useBackendTsApi';
 
 // Define the types for your state
@@ -7,6 +13,7 @@ type Device = BackendTsDevice;
 
 type Capacitor = BackendTsCapacitor;
 type Place = BackendTsPlace;
+type Plant = BackendTsPlant;
 
 type Point = BackendTsPoint;
 
@@ -14,6 +21,7 @@ interface DeviceStoreState {
     devices: Device[];
     capacitors: Capacitor[];
     places: Place[];
+    plants: Plant[];
     points: Point[];
 }
 
@@ -22,12 +30,14 @@ export const useDeviceStore = defineStore('deviceStore', {
         devices: [] as Device[],
         capacitors: [] as Capacitor[],
         places: [] as Place[],
+        plants: [] as Plant[],
         points: [] as Point[],
     }),
     getters: {
         getDevices:(state) => state.devices,
         getCapacitors:(state) => state.capacitors,
         getPlaces:(state) => state.places,
+        getPlants:(state) => state.plants,
         getPoints:(state) => state.points,
     },
     actions: {
@@ -74,9 +84,21 @@ export const useDeviceStore = defineStore('deviceStore', {
             return data;
         },
 
+        async fetchPlants () {
+            const api = useBackendTsApi();
+            const data  = await api.listPlants();
+            this.plants = data;
+            return data;
+        },
+
         async fetchPoint (id: number) {
             const api = useBackendTsApi();
             return api.getPoint(id);
+        },
+
+        async fetchPlant (id: number) {
+            const api = useBackendTsApi();
+            return api.getPlant(id);
         },
         
         async createDevice (name: string, notes: string, deviceKey: string) {
@@ -131,6 +153,42 @@ export const useDeviceStore = defineStore('deviceStore', {
             const api = useBackendTsApi();
             await api.deletePlace(id);
             await this.fetchPlaces();
+        },
+
+        async createPlant (input: {
+            userId?: number;
+            name: string;
+            species?: string;
+            location?: string;
+            targetHumidityMin?: number | null;
+            targetHumidityMax?: number | null;
+            targetWateringDurationSec?: number | null;
+            active?: boolean;
+        }) {
+            const api = useBackendTsApi();
+            await api.createPlant(input);
+            await this.fetchPlants();
+        },
+
+        async updatePlant (id: number, input: {
+            userId?: number;
+            name: string;
+            species?: string;
+            location?: string;
+            targetHumidityMin?: number | null;
+            targetHumidityMax?: number | null;
+            targetWateringDurationSec?: number | null;
+            active?: boolean;
+        }) {
+            const api = useBackendTsApi();
+            await api.updatePlant(id, input);
+            await this.fetchPlants();
+        },
+
+        async deletePlant (id: number) {
+            const api = useBackendTsApi();
+            await api.deletePlant(id);
+            await this.fetchPlants();
         },
 
         async createPoint (input: {

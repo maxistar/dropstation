@@ -50,6 +50,21 @@ interface UpsertPlaceBody {
   name?: string;
 }
 
+interface PlantParams {
+  id: string;
+}
+
+interface UpsertPlantBody {
+  userId?: number;
+  name?: string;
+  species?: string;
+  location?: string;
+  targetHumidityMin?: number | null;
+  targetHumidityMax?: number | null;
+  targetWateringDurationSec?: number | null;
+  active?: boolean;
+}
+
 interface PointParams {
   id: string;
 }
@@ -258,6 +273,145 @@ export function registerUiRoutes(
   app.get("/api/ui/v1/places", { preHandler: requireUiAuth }, async () => {
     return uiService.listPlaces();
   });
+
+  app.get("/api/ui/v1/plants", { preHandler: requireUiAuth }, async () => {
+    return uiService.listPlants();
+  });
+
+  app.get<{ Params: PlantParams }>(
+    "/api/ui/v1/plants/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid plant id" };
+      }
+
+      try {
+        return await uiService.getPlant(id);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Plant not found") {
+          reply.code(404);
+          return { error: "Plant not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: UpsertPlantBody }>(
+    "/api/ui/v1/plants",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const body = request.body ?? {};
+
+      if (!body.name?.trim()) {
+        reply.code(400);
+        return { error: "name is required" };
+      }
+
+      if (
+        !isNullableNumber(body.targetHumidityMin)
+        || !isNullableNumber(body.targetHumidityMax)
+        || !isNullableNumber(body.targetWateringDurationSec)
+      ) {
+        reply.code(400);
+        return { error: "targetHumidityMin, targetHumidityMax and targetWateringDurationSec must be numbers or null" };
+      }
+
+      const plant = await uiService.createPlant({
+        userId: body.userId,
+        name: body.name.trim(),
+        species: body.species,
+        location: body.location,
+        targetHumidityMin: body.targetHumidityMin ?? null,
+        targetHumidityMax: body.targetHumidityMax ?? null,
+        targetWateringDurationSec: body.targetWateringDurationSec ?? null,
+        active: normalizeActiveFlag(body.active),
+      });
+
+      reply.code(201);
+      return plant;
+    },
+  );
+
+  app.put<{ Params: PlantParams; Body: UpsertPlantBody }>(
+    "/api/ui/v1/plants/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid plant id" };
+      }
+
+      const body = request.body ?? {};
+      if (!body.name?.trim()) {
+        reply.code(400);
+        return { error: "name is required" };
+      }
+
+      if (
+        !isNullableNumber(body.targetHumidityMin)
+        || !isNullableNumber(body.targetHumidityMax)
+        || !isNullableNumber(body.targetWateringDurationSec)
+      ) {
+        reply.code(400);
+        return { error: "targetHumidityMin, targetHumidityMax and targetWateringDurationSec must be numbers or null" };
+      }
+
+      try {
+        return await uiService.updatePlant({
+          id,
+          userId: body.userId,
+          name: body.name.trim(),
+          species: body.species,
+          location: body.location,
+          targetHumidityMin: body.targetHumidityMin ?? null,
+          targetHumidityMax: body.targetHumidityMax ?? null,
+          targetWateringDurationSec: body.targetWateringDurationSec ?? null,
+          active: normalizeActiveFlag(body.active),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "Plant not found") {
+          reply.code(404);
+          return { error: "Plant not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Params: PlantParams }>(
+    "/api/ui/v1/plants/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid plant id" };
+      }
+
+      try {
+        await uiService.deletePlant(id);
+        reply.code(204);
+        return null;
+      } catch (error) {
+        if (error instanceof Error && error.message === "Plant not found") {
+          reply.code(404);
+          return { error: "Plant not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
 
   app.get<{ Params: PlaceParams }>(
     "/api/ui/v1/places/:id",
@@ -652,4 +806,12 @@ function normalizeDuration(rawDuration: number | undefined): number | null {
 
 function isValidNumber(value: number | undefined): value is number {
   return typeof value === "number" && Number.isFinite(value);
+}
+
+function isNullableNumber(value: number | null | undefined): value is number | null | undefined {
+  return value === undefined || value === null || isValidNumber(value);
+}
+
+function normalizeActiveFlag(active: boolean | undefined): boolean {
+  return active ?? true;
 }

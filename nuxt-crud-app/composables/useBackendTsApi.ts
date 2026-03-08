@@ -46,6 +46,18 @@ export interface BackendTsPlace {
   name: string;
 }
 
+export interface BackendTsPlant {
+  id: number;
+  userId: number;
+  name: string;
+  species: string;
+  location: string;
+  targetHumidityMin: number | null;
+  targetHumidityMax: number | null;
+  targetWateringDurationSec: number | null;
+  active: boolean;
+}
+
 export interface BackendTsDeviceUpsertInput {
   name?: string;
   notes?: string;
@@ -77,6 +89,17 @@ export interface BackendTsPointUpsertInput {
   wateringType: number;
   wateringValue: number;
   wateringHour: number;
+}
+
+export interface BackendTsPlantUpsertInput {
+  userId?: number;
+  name: string;
+  species?: string;
+  location?: string;
+  targetHumidityMin?: number | null;
+  targetHumidityMax?: number | null;
+  targetWateringDurationSec?: number | null;
+  active?: boolean;
 }
 
 export function useBackendTsApi() {
@@ -185,6 +208,34 @@ export function useBackendTsApi() {
 
     deletePlace(id: number) {
       return client<void>(`/api/ui/v1/places/${id}`, {
+        method: 'DELETE',
+      })
+    },
+
+    listPlants() {
+      return client<BackendTsPlant[]>('/api/ui/v1/plants')
+    },
+
+    getPlant(id: number) {
+      return client<BackendTsPlant>(`/api/ui/v1/plants/${id}`)
+    },
+
+    createPlant(input: BackendTsPlantUpsertInput) {
+      return client<BackendTsPlant>('/api/ui/v1/plants', {
+        method: 'POST',
+        body: input,
+      })
+    },
+
+    updatePlant(id: number, input: BackendTsPlantUpsertInput) {
+      return client<BackendTsPlant>(`/api/ui/v1/plants/${id}`, {
+        method: 'PUT',
+        body: input,
+      })
+    },
+
+    deletePlant(id: number) {
+      return client<void>(`/api/ui/v1/plants/${id}`, {
         method: 'DELETE',
       })
     },

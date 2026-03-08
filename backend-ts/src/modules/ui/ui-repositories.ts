@@ -1,19 +1,23 @@
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import type { DatabasePool } from "../../db/create-mysql-pool.js";
 import type { PoolConnection } from "mysql2/promise";
+import { randomUUID } from "node:crypto";
 import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
+  CreateUiPlantInput,
   CreateUiPlaceInput,
   CreateUiPointInput,
   DashboardPlantRecord,
   DashboardTankRecord,
   UiCapacitorRecord,
   UiDeviceRecord,
+  UiPlantRecord,
   UiPlaceRecord,
   UiPointRecord,
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
+  UpdateUiPlantInput,
   UpdateUiPlaceInput,
   UpdateUiPointInput,
 } from "./ui-types.js";
@@ -64,6 +68,18 @@ interface UiPlaceRow extends RowDataPacket {
   name: string;
 }
 
+interface UiPlantRow extends RowDataPacket {
+  id: number;
+  userId: number;
+  name: string;
+  species: string | null;
+  location: string | null;
+  targetHumidityMin: number | null;
+  targetHumidityMax: number | null;
+  targetWateringDurationSec: number | null;
+  active: number;
+}
+
 interface DashboardPlantRow extends RowDataPacket {
   id: number;
   name: string | null;
@@ -92,6 +108,8 @@ export interface UiRepositories {
   findPointById(id: number): Promise<UiPointRecord | null>;
   listPlaces(): Promise<UiPlaceRecord[]>;
   findPlaceById(id: number): Promise<UiPlaceRecord | null>;
+  listPlants(): Promise<UiPlantRecord[]>;
+  findPlantById(id: number): Promise<UiPlantRecord | null>;
   createDevice(connection: PoolConnection, input: CreateUiDeviceInput): Promise<number>;
   updateDevice(connection: PoolConnection, input: UpdateUiDeviceInput): Promise<void>;
   deleteDevice(connection: PoolConnection, id: number): Promise<boolean>;
@@ -104,6 +122,9 @@ export interface UiRepositories {
   createPlace(connection: PoolConnection, input: CreateUiPlaceInput): Promise<number>;
   updatePlace(connection: PoolConnection, input: UpdateUiPlaceInput): Promise<void>;
   deletePlace(connection: PoolConnection, id: number): Promise<boolean>;
+  createPlant(connection: PoolConnection, input: CreateUiPlantInput): Promise<number>;
+  updatePlant(connection: PoolConnection, input: UpdateUiPlantInput): Promise<void>;
+  deletePlant(connection: PoolConnection, id: number): Promise<boolean>;
   listDashboardPlants(): Promise<DashboardPlantRecord[]>;
   getDashboardTank(): Promise<DashboardTankRecord | null>;
   waterPlant(connection: PoolConnection, plantId: number, duration: number): Promise<boolean>;
@@ -283,6 +304,50 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
       return rows[0] ? mapUiPlaceRow(rows[0]) : null;
     },
 
+    async listPlants() {
+      const [rows] = await pool.query<UiPlantRow[]>(
+        `
+          SELECT
+            p.id,
+            p.user_id AS userId,
+            p.name,
+            p.species,
+            p.location,
+            p.target_humidity_min AS targetHumidityMin,
+            p.target_humidity_max AS targetHumidityMax,
+            p.target_watering_duration_sec AS targetWateringDurationSec,
+            p.active
+          FROM plants p
+          ORDER BY p.id ASC
+        `,
+      );
+
+      return rows.map(mapUiPlantRow);
+    },
+
+    async findPlantById(id) {
+      const [rows] = await pool.query<UiPlantRow[]>(
+        `
+          SELECT
+            p.id,
+            p.user_id AS userId,
+            p.name,
+            p.species,
+            p.location,
+            p.target_humidity_min AS targetHumidityMin,
+            p.target_humidity_max AS targetHumidityMax,
+            p.target_watering_duration_sec AS targetWateringDurationSec,
+            p.active
+          FROM plants p
+          WHERE p.id = ?
+          LIMIT 1
+        `,
+        [id],
+      );
+
+      return rows[0] ? mapUiPlantRow(rows[0]) : null;
+    },
+
     async createDevice(connection, input) {
       const [result] = await connection.execute<ResultSetHeader>(
         "INSERT INTO devices (notes, device_key) VALUES (?, ?)",
@@ -411,6 +476,70 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
     async deletePlace(connection, id) {
       const [result] = await connection.execute<ResultSetHeader>(
         "DELETE FROM places WHERE id = ?",
+        [id],
+      );
+
+      return result.affectedRows > 0;
+    },
+
+    async createPlant(connection, input) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO plants (
+          external_id,
+          user_id,
+          name,
+          species,
+          location,
+          target_humidity_min,
+          target_humidity_max,
+          target_watering_duration_sec,
+          active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          generatePlantExternalId(),
+          input.userId ?? 1,
+          normalizeName(input.name),
+          normalizeNullable(input.species),
+          normalizeNullable(input.location),
+          input.targetHumidityMin ?? null,
+          input.targetHumidityMax ?? null,
+          input.targetWateringDurationSec ?? null,
+          input.active ?? true ? 1 : 0,
+        ],
+      );
+
+      return result.insertId;
+    },
+
+    async updatePlant(connection, input) {
+      await connection.execute<ResultSetHeader>(
+        `UPDATE plants SET
+          user_id = ?,
+          name = ?,
+          species = ?,
+          location = ?,
+          target_humidity_min = ?,
+          target_humidity_max = ?,
+          target_watering_duration_sec = ?,
+          active = ?
+        WHERE id = ?`,
+        [
+          input.userId ?? 1,
+          normalizeName(input.name),
+          normalizeNullable(input.species),
+          normalizeNullable(input.location),
+          input.targetHumidityMin ?? null,
+          input.targetHumidityMax ?? null,
+          input.targetWateringDurationSec ?? null,
+          input.active ?? true ? 1 : 0,
+          input.id,
+        ],
+      );
+    },
+
+    async deletePlant(connection, id) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "DELETE FROM plants WHERE id = ?",
         [id],
       );
 
@@ -558,6 +687,20 @@ function mapUiPlaceRow(row: UiPlaceRow): UiPlaceRecord {
   };
 }
 
+function mapUiPlantRow(row: UiPlantRow): UiPlantRecord {
+  return {
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    species: row.species,
+    location: row.location,
+    targetHumidityMin: row.targetHumidityMin,
+    targetHumidityMax: row.targetHumidityMax,
+    targetWateringDurationSec: row.targetWateringDurationSec,
+    active: Boolean(row.active),
+  };
+}
+
 function normalizeNotes(notes?: string): string {
   return notes?.trim() ?? "";
 }
@@ -569,4 +712,8 @@ function normalizeName(name: string): string {
 function normalizeNullable(value?: string): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function generatePlantExternalId(): string {
+  return `pl_${randomUUID().replaceAll("-", "")}`;
 }

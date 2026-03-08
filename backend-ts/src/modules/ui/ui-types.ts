@@ -89,6 +89,30 @@ export interface UiPlaceView {
   name: string;
 }
 
+export interface UiPlantRecord {
+  id: number;
+  userId: number;
+  name: string;
+  species: string | null;
+  location: string | null;
+  targetHumidityMin: number | null;
+  targetHumidityMax: number | null;
+  targetWateringDurationSec: number | null;
+  active: boolean;
+}
+
+export interface UiPlantView {
+  id: number;
+  userId: number;
+  name: string;
+  species: string;
+  location: string;
+  targetHumidityMin: number | null;
+  targetHumidityMax: number | null;
+  targetWateringDurationSec: number | null;
+  active: boolean;
+}
+
 export interface CreateUiDeviceInput {
   name?: string;
   notes?: string;
@@ -126,6 +150,29 @@ export interface UpdateUiPlaceInput {
   userId?: number;
   index: number;
   name: string;
+}
+
+export interface CreateUiPlantInput {
+  userId?: number;
+  name: string;
+  species?: string;
+  location?: string;
+  targetHumidityMin?: number | null;
+  targetHumidityMax?: number | null;
+  targetWateringDurationSec?: number | null;
+  active?: boolean;
+}
+
+export interface UpdateUiPlantInput {
+  id: number;
+  userId?: number;
+  name: string;
+  species?: string;
+  location?: string;
+  targetHumidityMin?: number | null;
+  targetHumidityMax?: number | null;
+  targetWateringDurationSec?: number | null;
+  active?: boolean;
 }
 
 export interface CreateUiPointInput {

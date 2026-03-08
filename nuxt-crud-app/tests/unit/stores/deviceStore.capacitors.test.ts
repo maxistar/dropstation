@@ -13,6 +13,11 @@ const apiMock = {
   updateDevice: vi.fn(),
   deleteDevice: vi.fn(),
   listPoints: vi.fn(),
+  listPlants: vi.fn(),
+  getPlant: vi.fn(),
+  createPlant: vi.fn(),
+  updatePlant: vi.fn(),
+  deletePlant: vi.fn(),
 }
 
 vi.mock('~/composables/useBackendTsApi', () => ({
