@@ -7,8 +7,9 @@ import {
   createAuthToken,
   sendForbidden,
   type AuthLoginRequestBody,
-  verifyCredentials,
 } from "../../auth/password-auth.js";
+import { verifyPasswordHash } from "../../auth/password-hash.js";
+import { createUiAuthRepository } from "../../modules/auth/ui-auth-repository.js";
 
 interface DeviceParams {
   id: string;
@@ -35,6 +36,7 @@ export function registerUiRoutes(
   config: AppConfig,
 ): void {
   const uiService = new UiService(database);
+  const authRepository = createUiAuthRepository(database.pool);
   const requireUiAuth = buildUiAuthPreHandler(config);
 
   app.get("/api/ui/v1", async () => {
@@ -45,14 +47,21 @@ export function registerUiRoutes(
   });
 
   app.post<{ Body: AuthLoginRequestBody }>("/api/ui/v1/auth/login", async (request, reply) => {
-    if (!verifyCredentials(request.body ?? {}, config)) {
+    const identifier = request.body?.username?.trim();
+    const password = request.body?.password;
+    if (!identifier || !password) {
       sendForbidden(reply);
       return;
     }
 
-    const username = request.body.username!.trim();
+    const user = await authRepository.findByIdentifier(identifier);
+    if (!user || !user.active || !user.passwordHash || !verifyPasswordHash(password, user.passwordHash)) {
+      sendForbidden(reply);
+      return;
+    }
+
     return {
-      token: createAuthToken(username, config),
+      token: createAuthToken(user.login || user.email || identifier, config),
       expiresIn: config.authTokenTtlSeconds,
       tokenType: "Bearer",
     };

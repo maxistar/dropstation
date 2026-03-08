@@ -15,12 +15,13 @@ function makeConfig(): AppConfig {
     dbName: "dropstation",
     dbUser: "root",
     dbPassword: "gotechnies",
-    authUsername: "admin",
-    authPassword: "admin",
     authTokenSecret: "test-secret",
     authTokenTtlSeconds: 3600,
   };
 }
+
+const DEFAULT_TEST_PASSWORD_HASH =
+  "scrypt$16384$8$1$i0hly_X09ycrznpvVOlxYA$OM3Xnl0TvYK1M7CNqKtMaDKGGsuBcEx-ZDchDr9CdighBIP1W0QlcDrNEDnZwPR5yXSZBOneO2nYPAXwRP05Xw";
 
 async function loginAndGetHeaders(app: ReturnType<typeof buildServer>): Promise<Record<string, string>> {
   const loginResponse = await app.inject({
@@ -62,7 +63,22 @@ interface FakeState {
 function makeDatabaseContext(state: FakeState): DatabaseContext {
   return {
     pool: {
-      query: async (sql: string) => {
+      query: async (sql: string, params?: unknown[]) => {
+        if (sql.includes("FROM users u")) {
+          const identifier = String(params?.[0] ?? "");
+          if (identifier === "admin" || identifier === "admin@example.com") {
+            return [[{
+              id: 1001,
+              login: "admin",
+              email: "admin@example.com",
+              passwordHash: DEFAULT_TEST_PASSWORD_HASH,
+              active: 1,
+            }], {}] as [unknown[], unknown];
+          }
+
+          return [[], {}] as [unknown[], unknown];
+        }
+
         if (sql.includes("FROM points pt") && sql.includes("JOIN plants p")) {
           return [state.plants, {}] as [unknown[], unknown];
         }

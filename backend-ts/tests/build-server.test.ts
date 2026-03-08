@@ -15,19 +15,23 @@ function makeConfig(): AppConfig {
     dbName: "dropstation",
     dbUser: "root",
     dbPassword: "gotechnies",
-    authUsername: "admin",
-    authPassword: "admin",
     authTokenSecret: "test-secret",
     authTokenTtlSeconds: 3600,
   };
 }
 
-async function loginAndGetHeaders(app: ReturnType<typeof buildServer>): Promise<Record<string, string>> {
+const DEFAULT_TEST_PASSWORD_HASH =
+  "scrypt$16384$8$1$i0hly_X09ycrznpvVOlxYA$OM3Xnl0TvYK1M7CNqKtMaDKGGsuBcEx-ZDchDr9CdighBIP1W0QlcDrNEDnZwPR5yXSZBOneO2nYPAXwRP05Xw";
+
+async function loginAndGetHeaders(
+  app: ReturnType<typeof buildServer>,
+  username = "admin",
+): Promise<Record<string, string>> {
   const loginResponse = await app.inject({
     method: "POST",
     url: "/api/ui/v1/auth/login",
     payload: {
-      username: "admin",
+      username,
       password: "admin",
     },
   });
@@ -40,8 +44,15 @@ async function loginAndGetHeaders(app: ReturnType<typeof buildServer>): Promise<
 }
 
 function makeDatabaseContext(overrides?: {
-  query?: (sql: string) => Promise<[unknown[], unknown]>;
+  query?: (sql: string, params?: unknown[]) => Promise<[unknown[], unknown]>;
   execute?: (sql: string, params?: unknown[]) => Promise<[unknown, unknown]>;
+  authUser?: {
+    id: number;
+    login: string;
+    email: string;
+    passwordHash: string;
+    active: number;
+  } | null;
 }): DatabaseContext {
   const query =
     overrides?.query ??
@@ -56,7 +67,31 @@ function makeDatabaseContext(overrides?: {
 
   return {
     pool: {
-      query,
+      query: async (sql: string, params?: unknown[]) => {
+        if (sql.includes("FROM users u")) {
+          const authUser = Object.prototype.hasOwnProperty.call(overrides ?? {}, "authUser")
+            ? overrides?.authUser
+            : {
+            id: 1001,
+            login: "admin",
+            email: "admin@example.com",
+            passwordHash: DEFAULT_TEST_PASSWORD_HASH,
+            active: 1,
+            };
+          if (!authUser) {
+            return [[], {}];
+          }
+
+          const identifier = String(params?.[0] ?? "");
+          if (identifier === authUser.login || identifier === authUser.email) {
+            return [[authUser], {}];
+          }
+
+          return [[], {}];
+        }
+
+        return query(sql, params);
+      },
       getConnection: async () => ({
         beginTransaction: async () => undefined,
         commit: async () => undefined,
@@ -767,7 +802,7 @@ describe("buildServer", () => {
     });
   });
 
-  it("returns token for valid login and rejects invalid credentials", async () => {
+  it("returns token for valid login by login/email and rejects invalid credentials", async () => {
     const app = buildServer(makeConfig(), makeDatabaseContext());
     apps.push(app);
 
@@ -786,6 +821,16 @@ describe("buildServer", () => {
       expiresIn: 3600,
     });
 
+    const emailResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/auth/login",
+      payload: {
+        username: "admin@example.com",
+        password: "admin",
+      },
+    });
+    expect(emailResponse.statusCode).toBe(200);
+
     const failedResponse = await app.inject({
       method: "POST",
       url: "/api/ui/v1/auth/login",
@@ -799,5 +844,49 @@ describe("buildServer", () => {
     expect(failedResponse.json()).toEqual({
       error: "Forbidden",
     });
+  });
+
+  it("rejects missing or inactive DB users during login", async () => {
+    const missingUserApp = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        authUser: null,
+      }),
+    );
+    apps.push(missingUserApp);
+
+    const missingUserResponse = await missingUserApp.inject({
+      method: "POST",
+      url: "/api/ui/v1/auth/login",
+      payload: {
+        username: "admin",
+        password: "admin",
+      },
+    });
+    expect(missingUserResponse.statusCode).toBe(403);
+
+    const inactiveUserApp = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        authUser: {
+          id: 1001,
+          login: "admin",
+          email: "admin@example.com",
+          passwordHash: DEFAULT_TEST_PASSWORD_HASH,
+          active: 0,
+        },
+      }),
+    );
+    apps.push(inactiveUserApp);
+
+    const inactiveUserResponse = await inactiveUserApp.inject({
+      method: "POST",
+      url: "/api/ui/v1/auth/login",
+      payload: {
+        username: "admin",
+        password: "admin",
+      },
+    });
+    expect(inactiveUserResponse.statusCode).toBe(403);
   });
 });

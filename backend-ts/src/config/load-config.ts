@@ -9,8 +9,6 @@ export interface AppConfig {
   dbName: string;
   dbUser: string;
   dbPassword: string;
-  authUsername: string;
-  authPassword: string;
   authTokenSecret: string;
   authTokenTtlSeconds: number;
 }
@@ -26,8 +24,6 @@ const DEFAULT_DB_PORT = 3306;
 const DEFAULT_DB_NAME = "dropstation";
 const DEFAULT_DB_USER = "root";
 const DEFAULT_DB_PASSWORD = "gotechnies";
-const DEFAULT_AUTH_USERNAME = "admin";
-const DEFAULT_AUTH_PASSWORD = "admin";
 const DEFAULT_AUTH_TOKEN_SECRET = "change-me-in-production";
 const DEFAULT_AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 8;
 
@@ -62,8 +58,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dbName: env.DB_NAME ?? DEFAULT_DB_NAME,
     dbUser: env.DB_USER ?? DEFAULT_DB_USER,
     dbPassword: env.DB_PASSWORD ?? DEFAULT_DB_PASSWORD,
-    authUsername: env.AUTH_USERNAME ?? DEFAULT_AUTH_USERNAME,
-    authPassword: env.AUTH_PASSWORD ?? DEFAULT_AUTH_PASSWORD,
     authTokenSecret: env.AUTH_TOKEN_SECRET ?? DEFAULT_AUTH_TOKEN_SECRET,
     authTokenTtlSeconds,
   };

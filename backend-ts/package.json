@@ -12,7 +12,8 @@
     "start": "node dist/index.js",
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "hash:password": "node ../scripts/hash-password.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",

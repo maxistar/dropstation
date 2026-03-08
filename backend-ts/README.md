@@ -53,8 +53,6 @@ The service loads variables from `.env`. The example file is set up for running 
 - `DB_NAME=dropstation`
 - `DB_USER=root`
 - `DB_PASSWORD=gotechnies`
-- `AUTH_USERNAME=admin`
-- `AUTH_PASSWORD=admin`
 - `AUTH_TOKEN_SECRET=change-me-in-production`
 - `AUTH_TOKEN_TTL_SECONDS=28800`
 
@@ -65,6 +63,30 @@ The backend allows browser requests from configured origins. Set either:
 - `CORS_ORIGINS` as a comma-separated list (takes precedence).
 
 For local development, keep Nuxt and Angular origins in the allowlist.
+
+## Local Auth User Provisioning
+
+UI login is DB-backed and reads from table `users` (`login` OR `email`, `password_hash`, `active`).
+
+`scripts/bootstrap-mysql8.sh` applies `backend/inc/sql/20260308_add_user_auth_fields.sql` and seeds this local dev user:
+
+- `login=admin`
+- `email=admin@example.com`
+- password: `admin`
+- `active=1`
+
+Generate a new scrypt password hash for custom users:
+
+```bash
+npm run hash:password -- "<your-password>"
+```
+
+Example SQL for creating a custom active user:
+
+```sql
+INSERT INTO users (login, timezone, email, password_hash, active)
+VALUES ('myuser', 'UTC', 'myuser@example.com', '<hash-from-command>', 1);
+```
 
 ## Dashboard API (Angular)
 

@@ -59,17 +59,6 @@ export function verifyAuthToken(token: string, config: AppConfig): TokenPayload 
   }
 }
 
-export function verifyCredentials(body: AuthLoginRequestBody, config: AppConfig): boolean {
-  const username = body.username?.trim();
-  const password = body.password;
-
-  if (!username || !password) {
-    return false;
-  }
-
-  return username === config.authUsername && password === config.authPassword;
-}
-
 function extractBearerToken(request: FastifyRequest): string | null {
   const header = request.headers.authorization;
   if (!header || typeof header !== "string") {
