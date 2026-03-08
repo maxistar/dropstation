@@ -5,6 +5,7 @@ import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
   CreateUiPlaceInput,
+  CreateUiPointInput,
   DashboardPlantRecord,
   DashboardTankRecord,
   UiCapacitorRecord,
@@ -14,6 +15,7 @@ import type {
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
   UpdateUiPlaceInput,
+  UpdateUiPointInput,
 } from "./ui-types.js";
 
 interface UiDeviceRow extends RowDataPacket {
@@ -87,6 +89,7 @@ export interface UiRepositories {
   listPoints(): Promise<UiPointRecord[]>;
   listCapacitors(): Promise<UiCapacitorRecord[]>;
   findCapacitorById(id: number): Promise<UiCapacitorRecord | null>;
+  findPointById(id: number): Promise<UiPointRecord | null>;
   listPlaces(): Promise<UiPlaceRecord[]>;
   findPlaceById(id: number): Promise<UiPlaceRecord | null>;
   createDevice(connection: PoolConnection, input: CreateUiDeviceInput): Promise<number>;
@@ -95,6 +98,9 @@ export interface UiRepositories {
   createCapacitor(connection: PoolConnection, input: CreateUiCapacitorInput): Promise<number>;
   updateCapacitor(connection: PoolConnection, input: UpdateUiCapacitorInput): Promise<void>;
   deleteCapacitor(connection: PoolConnection, id: number): Promise<boolean>;
+  createPoint(connection: PoolConnection, input: CreateUiPointInput): Promise<number>;
+  updatePoint(connection: PoolConnection, input: UpdateUiPointInput): Promise<void>;
+  deletePoint(connection: PoolConnection, id: number): Promise<boolean>;
   createPlace(connection: PoolConnection, input: CreateUiPlaceInput): Promise<number>;
   updatePlace(connection: PoolConnection, input: UpdateUiPlaceInput): Promise<void>;
   deletePlace(connection: PoolConnection, id: number): Promise<boolean>;
@@ -179,6 +185,34 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
       );
 
       return rows.map(mapUiPointRow);
+    },
+
+    async findPointById(id) {
+      const [rows] = await pool.query<UiPointRow[]>(
+        `
+          SELECT
+            p.id,
+            p.user_id AS userId,
+            p.device_id AS deviceId,
+            p.plant_id AS plantId,
+            p.capacity_id AS capacityId,
+            p.last_watering AS lastWatering,
+            p.notes,
+            p.watering_type AS wateringType,
+            p.watering_value AS wateringValue,
+            p.watering_hour AS wateringHour,
+            p.num AS \`index\`,
+            p.address,
+            p.status,
+            p.humidity
+          FROM points p
+          WHERE p.id = ?
+          LIMIT 1
+        `,
+        [id],
+      );
+
+      return rows[0] ? mapUiPointRow(rows[0]) : null;
     },
 
     async listCapacitors() {
@@ -293,6 +327,65 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
     async deleteCapacitor(connection, id) {
       const [result] = await connection.execute<ResultSetHeader>(
         "DELETE FROM capacitors WHERE id = ?",
+        [id],
+      );
+
+      return result.affectedRows > 0;
+    },
+
+    async createPoint(connection, input) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO points (
+          user_id, device_id, plant_id, capacity_id, last_watering, notes,
+          watering_type, watering_value, watering_hour, num, address, status, humidity
+        ) VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          input.userId ?? 1,
+          input.deviceId,
+          input.plantId ?? null,
+          input.capacityId ?? null,
+          normalizeNotes(input.notes),
+          input.wateringType,
+          input.wateringValue,
+          input.wateringHour,
+          input.index,
+          normalizeNullable(input.address),
+          normalizeNullable(input.status),
+          input.humidity ?? null,
+        ],
+      );
+
+      return result.insertId;
+    },
+
+    async updatePoint(connection, input) {
+      await connection.execute<ResultSetHeader>(
+        `UPDATE points SET
+          user_id = ?, device_id = ?, plant_id = ?, capacity_id = ?, notes = ?,
+          watering_type = ?, watering_value = ?, watering_hour = ?, num = ?,
+          address = ?, status = ?, humidity = ?
+        WHERE id = ?`,
+        [
+          input.userId ?? 1,
+          input.deviceId,
+          input.plantId ?? null,
+          input.capacityId ?? null,
+          normalizeNotes(input.notes),
+          input.wateringType,
+          input.wateringValue,
+          input.wateringHour,
+          input.index,
+          normalizeNullable(input.address),
+          normalizeNullable(input.status),
+          input.humidity ?? null,
+          input.id,
+        ],
+      );
+    },
+
+    async deletePoint(connection, id) {
+      const [result] = await connection.execute<ResultSetHeader>(
+        "DELETE FROM points WHERE id = ?",
         [id],
       );
 
@@ -471,4 +564,9 @@ function normalizeNotes(notes?: string): string {
 
 function normalizeName(name: string): string {
   return name.trim();
+}
+
+function normalizeNullable(value?: string): string | null {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
 }

@@ -4,6 +4,7 @@ import type {
   CreateUiCapacitorInput,
   CreateUiDeviceInput,
   CreateUiPlaceInput,
+  CreateUiPointInput,
   DashboardPlantRecord,
   DashboardPlantView,
   DashboardTankRecord,
@@ -19,6 +20,7 @@ import type {
   UpdateUiCapacitorInput,
   UpdateUiDeviceInput,
   UpdateUiPlaceInput,
+  UpdateUiPointInput,
 } from "./ui-types.js";
 
 export class UiService {
@@ -46,6 +48,16 @@ export class UiService {
   public async listPoints(): Promise<UiPointView[]> {
     const points = await this.repositories.listPoints();
     return points.map((point) => this.toPointView(point));
+  }
+
+  public async getPoint(id: number): Promise<UiPointView> {
+    const point = await this.repositories.findPointById(id);
+
+    if (!point) {
+      throw new Error("Point not found");
+    }
+
+    return this.toPointView(point);
   }
 
   public async listCapacitors(): Promise<UiCapacitorView[]> {
@@ -139,6 +151,38 @@ export class UiService {
 
     if (!deleted) {
       throw new Error("Capacitor not found");
+    }
+  }
+
+  public async createPoint(input: CreateUiPointInput): Promise<UiPointView> {
+    const createdId = await this.database.withTransaction(async (connection) => {
+      return this.repositories.createPoint(connection, input);
+    });
+
+    return this.getPoint(createdId);
+  }
+
+  public async updatePoint(input: UpdateUiPointInput): Promise<UiPointView> {
+    const existing = await this.repositories.findPointById(input.id);
+
+    if (!existing) {
+      throw new Error("Point not found");
+    }
+
+    await this.database.withTransaction(async (connection) => {
+      await this.repositories.updatePoint(connection, input);
+    });
+
+    return this.getPoint(input.id);
+  }
+
+  public async deletePoint(id: number): Promise<void> {
+    const deleted = await this.database.withTransaction(async (connection) => {
+      return this.repositories.deletePoint(connection, id);
+    });
+
+    if (!deleted) {
+      throw new Error("Point not found");
     }
   }
 

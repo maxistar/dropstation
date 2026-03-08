@@ -73,6 +73,11 @@ export const useDeviceStore = defineStore('deviceStore', {
             this.points = data;
             return data;
         },
+
+        async fetchPoint (id: number) {
+            const api = useBackendTsApi();
+            return api.getPoint(id);
+        },
         
         async createDevice (name: string, notes: string, deviceKey: string) {
             const api = useBackendTsApi();
@@ -126,6 +131,50 @@ export const useDeviceStore = defineStore('deviceStore', {
             const api = useBackendTsApi();
             await api.deletePlace(id);
             await this.fetchPlaces();
+        },
+
+        async createPoint (input: {
+            userId?: number;
+            deviceId: number;
+            plantId?: number | null;
+            capacityId?: number | null;
+            index: number;
+            address?: string;
+            status?: string;
+            humidity?: number | null;
+            notes?: string;
+            wateringType: number;
+            wateringValue: number;
+            wateringHour: number;
+        }) {
+            const api = useBackendTsApi();
+            await api.createPoint(input);
+            await this.fetchPoints();
+        },
+
+        async updatePoint (id: number, input: {
+            userId?: number;
+            deviceId: number;
+            plantId?: number | null;
+            capacityId?: number | null;
+            index: number;
+            address?: string;
+            status?: string;
+            humidity?: number | null;
+            notes?: string;
+            wateringType: number;
+            wateringValue: number;
+            wateringHour: number;
+        }) {
+            const api = useBackendTsApi();
+            await api.updatePoint(id, input);
+            await this.fetchPoints();
+        },
+
+        async deletePoint (id: number) {
+            const api = useBackendTsApi();
+            await api.deletePoint(id);
+            await this.fetchPoints();
         },
     },
  });

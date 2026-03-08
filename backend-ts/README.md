@@ -106,7 +106,7 @@ Protected endpoints in this iteration:
 - `/api/ui/v1/devices` (+ by-id/create/update/delete)
 - `/api/ui/v1/capacitors` (+ by-id/create/update/delete)
 - `/api/ui/v1/places` (+ by-id/create/update/delete)
-- `/api/ui/v1/points`
+- `/api/ui/v1/points` (+ by-id/create/update/delete)
 - `/api/ui/v1/dashboard/plants`
 - `/api/ui/v1/dashboard/water-tank`
 - `/api/ui/v1/dashboard/plants/:id/water`

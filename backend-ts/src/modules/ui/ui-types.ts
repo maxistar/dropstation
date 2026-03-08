@@ -128,6 +128,37 @@ export interface UpdateUiPlaceInput {
   name: string;
 }
 
+export interface CreateUiPointInput {
+  userId?: number;
+  deviceId: number;
+  plantId?: number | null;
+  capacityId?: number | null;
+  index: number;
+  address?: string;
+  status?: string;
+  humidity?: number | null;
+  notes?: string;
+  wateringType: number;
+  wateringValue: number;
+  wateringHour: number;
+}
+
+export interface UpdateUiPointInput {
+  id: number;
+  userId?: number;
+  deviceId: number;
+  plantId?: number | null;
+  capacityId?: number | null;
+  index: number;
+  address?: string;
+  status?: string;
+  humidity?: number | null;
+  notes?: string;
+  wateringType: number;
+  wateringValue: number;
+  wateringHour: number;
+}
+
 export interface DashboardPlantRecord {
   id: number;
   name: string;

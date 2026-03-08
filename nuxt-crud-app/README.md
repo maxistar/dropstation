@@ -2,7 +2,7 @@
 
 This application is the admin/UI client for Dropstation.
 
-It no longer owns the migrated device and point backend flows directly. Those flows are now served by `dropstation/backend-ts`, and Nuxt consumes them over HTTP.
+It no longer owns migrated admin backend flows directly. Device, point, capacitor, and place flows are served by `dropstation/backend-ts`, and Nuxt consumes them over HTTP.
 
 ## Setup
 

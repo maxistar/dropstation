@@ -659,6 +659,198 @@ describe("buildServer", () => {
     ]);
   });
 
+  it("creates, updates and deletes a UI point", async () => {
+    const initialRow = [
+      {
+        id: 66,
+        userId: 1,
+        deviceId: 7,
+        plantId: 20,
+        capacityId: 2,
+        lastWatering: null,
+        notes: "Window pot",
+        wateringType: 0,
+        wateringValue: 50,
+        wateringHour: 8,
+        index: 1,
+        address: "04ABC20A",
+        status: "ok",
+        humidity: 55,
+      },
+    ];
+    const updatedRow = [
+      {
+        id: 66,
+        userId: 1,
+        deviceId: 8,
+        plantId: 20,
+        capacityId: 2,
+        lastWatering: null,
+        notes: "Updated notes",
+        wateringType: 1,
+        wateringValue: 65,
+        wateringHour: 9,
+        index: 2,
+        address: "04ABC20B",
+        status: "ok",
+        humidity: 57,
+      },
+    ];
+    let readCount = 0;
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql, params) => {
+          if (sql.includes("FROM points p") && params?.[0] === 66) {
+            readCount += 1;
+            return [readCount === 1 ? initialRow : updatedRow, {}];
+          }
+
+          return [[], {}];
+        },
+        execute: async (sql) => {
+          if (sql.includes("INSERT INTO points")) {
+            return [{ insertId: 66 }, {}];
+          }
+          if (sql.includes("UPDATE points SET")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+          if (sql.includes("DELETE FROM points WHERE id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const createResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/points",
+      headers: authHeaders,
+      payload: {
+        deviceId: 7,
+        plantId: 20,
+        capacityId: 2,
+        index: 1,
+        address: "04ABC20A",
+        status: "ok",
+        humidity: 55,
+        notes: "Window pot",
+        wateringType: 0,
+        wateringValue: 50,
+        wateringHour: 8,
+      },
+    });
+    expect(createResponse.statusCode).toBe(201);
+    expect(createResponse.json()).toEqual({
+      id: 66,
+      name: "04ABC20A",
+      deviceId: 7,
+      plantId: 20,
+      capacityId: 2,
+      index: 1,
+      address: "04ABC20A",
+      status: "ok",
+      humidity: 55,
+      lastWatering: null,
+      notes: "Window pot",
+      wateringType: 0,
+      wateringValue: 50,
+      wateringHour: 8,
+    });
+
+    const updateResponse = await app.inject({
+      method: "PUT",
+      url: "/api/ui/v1/points/66",
+      headers: authHeaders,
+      payload: {
+        deviceId: 8,
+        plantId: 20,
+        capacityId: 2,
+        index: 2,
+        address: "04ABC20B",
+        status: "ok",
+        humidity: 57,
+        notes: "Updated notes",
+        wateringType: 1,
+        wateringValue: 65,
+        wateringHour: 9,
+      },
+    });
+    expect(updateResponse.statusCode).toBe(200);
+    expect(updateResponse.json()).toEqual({
+      id: 66,
+      name: "04ABC20B",
+      deviceId: 8,
+      plantId: 20,
+      capacityId: 2,
+      index: 2,
+      address: "04ABC20B",
+      status: "ok",
+      humidity: 57,
+      lastWatering: null,
+      notes: "Updated notes",
+      wateringType: 1,
+      wateringValue: 65,
+      wateringHour: 9,
+    });
+
+    const deleteResponse = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/points/66",
+      headers: authHeaders,
+    });
+    expect(deleteResponse.statusCode).toBe(204);
+  });
+
+  it("returns validation and not-found errors for point CRUD routes", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async () => [[], {}],
+        execute: async (sql) => {
+          if (sql.includes("DELETE FROM points WHERE id = ?")) {
+            return [{ affectedRows: 0 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
+
+    const invalidCreate = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/points",
+      headers: authHeaders,
+      payload: {
+        wateringType: 0,
+        wateringValue: 50,
+        wateringHour: 8,
+      },
+    });
+    expect(invalidCreate.statusCode).toBe(400);
+
+    const missingPoint = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/points/9999",
+      headers: authHeaders,
+    });
+    expect(missingPoint.statusCode).toBe(404);
+
+    const missingDelete = await app.inject({
+      method: "DELETE",
+      url: "/api/ui/v1/points/9999",
+      headers: authHeaders,
+    });
+    expect(missingDelete.statusCode).toBe(404);
+  });
+
   it("serves the UI capacitors list", async () => {
     const capacitorRows = [
       {
@@ -1160,6 +1352,12 @@ describe("buildServer", () => {
       url: "/api/ui/v1/places",
     });
     expect(placeResponse.statusCode).toBe(401);
+
+    const pointResponse = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/points",
+    });
+    expect(pointResponse.statusCode).toBe(401);
   });
 
   it("returns token for valid login by login/email and rejects invalid credentials", async () => {

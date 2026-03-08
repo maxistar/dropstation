@@ -50,6 +50,25 @@ interface UpsertPlaceBody {
   name?: string;
 }
 
+interface PointParams {
+  id: string;
+}
+
+interface UpsertPointBody {
+  userId?: number;
+  deviceId?: number;
+  plantId?: number | null;
+  capacityId?: number | null;
+  index?: number;
+  address?: string;
+  status?: string;
+  humidity?: number | null;
+  notes?: string;
+  wateringType?: number;
+  wateringValue?: number;
+  wateringHour?: number;
+}
+
 export function registerUiRoutes(
   app: FastifyInstance,
   database: DatabaseContext,
@@ -98,6 +117,143 @@ export function registerUiRoutes(
   app.get("/api/ui/v1/points", { preHandler: requireUiAuth }, async () => {
     return uiService.listPoints();
   });
+
+  app.get<{ Params: PointParams }>(
+    "/api/ui/v1/points/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid point id" };
+      }
+
+      try {
+        return await uiService.getPoint(id);
+      } catch (error) {
+        if (error instanceof Error && error.message === "Point not found") {
+          reply.code(404);
+          return { error: "Point not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.post<{ Body: UpsertPointBody }>(
+    "/api/ui/v1/points",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const body = request.body ?? {};
+
+      if (
+        !isValidNumber(body.deviceId)
+        || !isValidNumber(body.index)
+        || !isValidNumber(body.wateringType)
+        || !isValidNumber(body.wateringValue)
+        || !isValidNumber(body.wateringHour)
+      ) {
+        reply.code(400);
+        return { error: "deviceId, index, wateringType, wateringValue and wateringHour are required numbers" };
+      }
+
+      const point = await uiService.createPoint({
+        userId: body.userId,
+        deviceId: Math.trunc(body.deviceId),
+        plantId: body.plantId ?? null,
+        capacityId: body.capacityId ?? null,
+        index: Math.trunc(body.index),
+        address: body.address,
+        status: body.status,
+        humidity: body.humidity ?? null,
+        notes: body.notes,
+        wateringType: Math.trunc(body.wateringType),
+        wateringValue: Math.trunc(body.wateringValue),
+        wateringHour: Math.trunc(body.wateringHour),
+      });
+
+      reply.code(201);
+      return point;
+    },
+  );
+
+  app.put<{ Params: PointParams; Body: UpsertPointBody }>(
+    "/api/ui/v1/points/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid point id" };
+      }
+
+      const body = request.body ?? {};
+      if (
+        !isValidNumber(body.deviceId)
+        || !isValidNumber(body.index)
+        || !isValidNumber(body.wateringType)
+        || !isValidNumber(body.wateringValue)
+        || !isValidNumber(body.wateringHour)
+      ) {
+        reply.code(400);
+        return { error: "deviceId, index, wateringType, wateringValue and wateringHour are required numbers" };
+      }
+
+      try {
+        return await uiService.updatePoint({
+          id,
+          userId: body.userId,
+          deviceId: Math.trunc(body.deviceId),
+          plantId: body.plantId ?? null,
+          capacityId: body.capacityId ?? null,
+          index: Math.trunc(body.index),
+          address: body.address,
+          status: body.status,
+          humidity: body.humidity ?? null,
+          notes: body.notes,
+          wateringType: Math.trunc(body.wateringType),
+          wateringValue: Math.trunc(body.wateringValue),
+          wateringHour: Math.trunc(body.wateringHour),
+        });
+      } catch (error) {
+        if (error instanceof Error && error.message === "Point not found") {
+          reply.code(404);
+          return { error: "Point not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
+
+  app.delete<{ Params: PointParams }>(
+    "/api/ui/v1/points/:id",
+    { preHandler: requireUiAuth },
+    async (request, reply) => {
+      const id = parseDeviceId(request.params.id);
+
+      if (id === null) {
+        reply.code(400);
+        return { error: "Invalid point id" };
+      }
+
+      try {
+        await uiService.deletePoint(id);
+        reply.code(204);
+        return null;
+      } catch (error) {
+        if (error instanceof Error && error.message === "Point not found") {
+          reply.code(404);
+          return { error: "Point not found" };
+        }
+
+        throw error;
+      }
+    },
+  );
 
   app.get("/api/ui/v1/places", { preHandler: requireUiAuth }, async () => {
     return uiService.listPlaces();

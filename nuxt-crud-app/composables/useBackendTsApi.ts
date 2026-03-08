@@ -64,6 +64,21 @@ export interface BackendTsPlaceUpsertInput {
   name: string;
 }
 
+export interface BackendTsPointUpsertInput {
+  userId?: number;
+  deviceId: number;
+  plantId?: number | null;
+  capacityId?: number | null;
+  index: number;
+  address?: string;
+  status?: string;
+  humidity?: number | null;
+  notes?: string;
+  wateringType: number;
+  wateringValue: number;
+  wateringHour: number;
+}
+
 export function useBackendTsApi() {
   const config = useRuntimeConfig()
   const authStore = useAuthStore()
@@ -120,6 +135,30 @@ export function useBackendTsApi() {
 
     listPoints() {
       return client<BackendTsPoint[]>('/api/ui/v1/points')
+    },
+
+    getPoint(id: number) {
+      return client<BackendTsPoint>(`/api/ui/v1/points/${id}`)
+    },
+
+    createPoint(input: BackendTsPointUpsertInput) {
+      return client<BackendTsPoint>('/api/ui/v1/points', {
+        method: 'POST',
+        body: input,
+      })
+    },
+
+    updatePoint(id: number, input: BackendTsPointUpsertInput) {
+      return client<BackendTsPoint>(`/api/ui/v1/points/${id}`, {
+        method: 'PUT',
+        body: input,
+      })
+    },
+
+    deletePoint(id: number) {
+      return client<void>(`/api/ui/v1/points/${id}`, {
+        method: 'DELETE',
+      })
     },
 
     listPlaces() {
