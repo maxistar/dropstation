@@ -9,7 +9,7 @@ function makeConfig(): AppConfig {
     port: 3001,
     nodeEnv: "test",
     logLevel: "silent",
-    corsOrigin: "http://localhost:3000",
+    corsOrigins: ["http://localhost:3000", "http://localhost:4200"],
     dbHost: "db",
     dbPort: 3306,
     dbName: "dropstation",
@@ -100,6 +100,40 @@ describe("buildServer", () => {
 
     expect(response.statusCode).toBe(204);
     expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+  });
+
+  it("handles CORS preflight for additional configured origin", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "OPTIONS",
+      url: "/api/ui/v1/dashboard/plants",
+      headers: {
+        origin: "http://localhost:4200",
+        "access-control-request-method": "GET",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:4200");
+  });
+
+  it("does not allow CORS for unconfigured origin", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "OPTIONS",
+      url: "/api/ui/v1/dashboard/plants",
+      headers: {
+        origin: "http://malicious.local",
+        "access-control-request-method": "GET",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBeUndefined();
   });
 
   it("returns 404 for an unknown runtime device", async () => {
@@ -555,5 +589,127 @@ describe("buildServer", () => {
         wateringHour: 8,
       },
     ]);
+  });
+
+  it("serves dashboard plants", async () => {
+    const plantRows = [
+      {
+        id: 4,
+        name: "Monstera",
+        type: "Tropical",
+        location: "Living Room",
+        soilHumidity: 52,
+        lastWatered: "2026-03-08 10:00:00",
+        wateringDuration: 45,
+        targetHumidityMin: 45,
+        targetHumidityMax: 65,
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM points pt") && sql.includes("JOIN plants p")) {
+            return [plantRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/dashboard/plants",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 4,
+        name: "Monstera",
+        type: "Tropical",
+        location: "Living Room",
+        soilHumidity: 52,
+        lastWatered: "2026-03-08T10:00:00.000Z",
+        wateringDuration: 45,
+        status: "optimal",
+        image: "https://images.pexels.com/photos/6208086/pexels-photo-6208086.jpeg?auto=compress&cs=tinysrgb&w=400&plant=4",
+        optimalHumidity: {
+          min: 45,
+          max: 65,
+        },
+      },
+    ]);
+  });
+
+  it("serves dashboard tank", async () => {
+    const tankRows = [
+      {
+        id: 1,
+        capacityMl: 50000,
+        currentLevelMl: 32500,
+        lastRefilledAt: "2026-03-07 12:00:00",
+      },
+    ];
+
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        query: async (sql) => {
+          if (sql.includes("FROM tanks t")) {
+            return [tankRows, {}];
+          }
+
+          return [[], {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/dashboard/water-tank",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: 1,
+      capacity: 50,
+      currentLevel: 33,
+      lastRefilled: "2026-03-07T12:00:00.000Z",
+      status: "medium",
+    });
+  });
+
+  it("waters dashboard plant", async () => {
+    const app = buildServer(
+      makeConfig(),
+      makeDatabaseContext({
+        execute: async (sql) => {
+          if (sql.includes("UPDATE points") && sql.includes("WHERE plant_id = ?")) {
+            return [{ affectedRows: 1 }, {}];
+          }
+
+          return [{}, {}];
+        },
+      }),
+    );
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/dashboard/plants/7/water",
+      payload: {
+        duration: 30,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      success: true,
+    });
   });
 });

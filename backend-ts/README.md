@@ -47,6 +47,7 @@ The service loads variables from `.env`. The example file is set up for running 
 - `HOST=0.0.0.0`
 - `PORT=3001`
 - `CORS_ORIGIN=http://localhost:3000`
+- `CORS_ADDITIONAL_ORIGIN=http://localhost:4200`
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3307`
 - `DB_NAME=dropstation`
@@ -55,7 +56,19 @@ The service loads variables from `.env`. The example file is set up for running 
 
 If you later run the TypeScript backend inside Docker on the same Compose network, switch DB settings to `DB_HOST=db` and `DB_PORT=3306`.
 
-The backend allows browser requests from `CORS_ORIGIN`, which should match the Nuxt app origin in local development.
+The backend allows browser requests from configured origins. Set either:
+- `CORS_ORIGIN` + `CORS_ADDITIONAL_ORIGIN`, or
+- `CORS_ORIGINS` as a comma-separated list (takes precedence).
+
+For local development, keep Nuxt and Angular origins in the allowlist.
+
+## Dashboard API (Angular)
+
+Dashboard-focused UI endpoints:
+
+- `GET /api/ui/v1/dashboard/plants`: returns dashboard plant cards/counter data
+- `GET /api/ui/v1/dashboard/water-tank`: returns dashboard tank status
+- `POST /api/ui/v1/dashboard/plants/:id/water`: triggers watering for the plant and returns `{ "success": true }`
 
 ## Validation
 
@@ -77,6 +90,8 @@ UI/admin endpoint shapes used by Nuxt:
 ```bash
 curl "http://localhost:3001/api/ui/v1/devices"
 curl "http://localhost:3001/api/ui/v1/points"
+curl "http://localhost:3001/api/ui/v1/dashboard/plants"
+curl "http://localhost:3001/api/ui/v1/dashboard/water-tank"
 ```
 
 ## Coexistence with PHP

@@ -3,7 +3,7 @@ export interface AppConfig {
   port: number;
   nodeEnv: string;
   logLevel: string;
-  corsOrigin: string;
+  corsOrigins: string[];
   dbHost: string;
   dbPort: number;
   dbName: string;
@@ -16,6 +16,7 @@ const DEFAULT_PORT = 3001;
 const DEFAULT_NODE_ENV = "development";
 const DEFAULT_LOG_LEVEL = "info";
 const DEFAULT_CORS_ORIGIN = "http://localhost:3000";
+const DEFAULT_CORS_ADDITIONAL_ORIGIN = "http://localhost:4200";
 const DEFAULT_DB_HOST = "db";
 const DEFAULT_DB_PORT = 3306;
 const DEFAULT_DB_NAME = "dropstation";
@@ -41,11 +42,23 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port,
     nodeEnv: env.NODE_ENV ?? DEFAULT_NODE_ENV,
     logLevel: env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL,
-    corsOrigin: env.CORS_ORIGIN ?? DEFAULT_CORS_ORIGIN,
+    corsOrigins: parseCorsOrigins(env),
     dbHost: env.DB_HOST ?? DEFAULT_DB_HOST,
     dbPort,
     dbName: env.DB_NAME ?? DEFAULT_DB_NAME,
     dbUser: env.DB_USER ?? DEFAULT_DB_USER,
     dbPassword: env.DB_PASSWORD ?? DEFAULT_DB_PASSWORD,
   };
+}
+
+function parseCorsOrigins(env: NodeJS.ProcessEnv): string[] {
+  const primary = (env.CORS_ORIGIN ?? DEFAULT_CORS_ORIGIN).trim();
+  const additional = (env.CORS_ADDITIONAL_ORIGIN ?? DEFAULT_CORS_ADDITIONAL_ORIGIN).trim();
+  const explicitList = (env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const normalized = explicitList.length > 0 ? explicitList : [primary, additional];
+  return [...new Set(normalized)];
 }

@@ -3,6 +3,8 @@ import type { DatabasePool } from "../../db/create-mysql-pool.js";
 import type { PoolConnection } from "mysql2/promise";
 import type {
   CreateUiDeviceInput,
+  DashboardPlantRecord,
+  DashboardTankRecord,
   UiDeviceRecord,
   UiPointRecord,
   UpdateUiDeviceInput,
@@ -40,6 +42,25 @@ interface UiPointRow extends RowDataPacket {
   humidity: number | null;
 }
 
+interface DashboardPlantRow extends RowDataPacket {
+  id: number;
+  name: string | null;
+  type: string | null;
+  location: string | null;
+  soilHumidity: number | null;
+  lastWatered: string | null;
+  wateringDuration: number | null;
+  targetHumidityMin: number | null;
+  targetHumidityMax: number | null;
+}
+
+interface DashboardTankRow extends RowDataPacket {
+  id: number;
+  capacityMl: number;
+  currentLevelMl: number;
+  lastRefilledAt: string | null;
+}
+
 export interface UiRepositories {
   listDevices(): Promise<UiDeviceRecord[]>;
   findDeviceById(id: number): Promise<UiDeviceRecord | null>;
@@ -47,6 +68,9 @@ export interface UiRepositories {
   createDevice(connection: PoolConnection, input: CreateUiDeviceInput): Promise<number>;
   updateDevice(connection: PoolConnection, input: UpdateUiDeviceInput): Promise<void>;
   deleteDevice(connection: PoolConnection, id: number): Promise<boolean>;
+  listDashboardPlants(): Promise<DashboardPlantRecord[]>;
+  getDashboardTank(): Promise<DashboardTankRecord | null>;
+  waterPlant(connection: PoolConnection, plantId: number, duration: number): Promise<boolean>;
 }
 
 export function createUiRepositories(pool: DatabasePool): UiRepositories {
@@ -150,6 +174,91 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
       );
 
       return result.affectedRows > 0;
+    },
+
+    async listDashboardPlants() {
+      const [rows] = await pool.query<DashboardPlantRow[]>(
+        `
+          SELECT
+            p.id,
+            p.name,
+            p.species AS type,
+            p.location,
+            pt.humidity AS soilHumidity,
+            pt.last_watering AS lastWatered,
+            COALESCE(p.target_watering_duration_sec, pt.watering_value) AS wateringDuration,
+            p.target_humidity_min AS targetHumidityMin,
+            p.target_humidity_max AS targetHumidityMax
+          FROM points pt
+          JOIN plants p ON p.id = pt.plant_id
+          ORDER BY pt.device_id ASC, pt.num ASC, pt.id ASC
+        `,
+      );
+
+      return rows.map((row) => ({
+        id: row.id,
+        name: row.name ?? "",
+        type: row.type,
+        location: row.location,
+        soilHumidity: row.soilHumidity,
+        lastWatered: row.lastWatered,
+        wateringDuration: row.wateringDuration,
+        targetHumidityMin: row.targetHumidityMin,
+        targetHumidityMax: row.targetHumidityMax,
+      }));
+    },
+
+    async getDashboardTank() {
+      const [rows] = await pool.query<DashboardTankRow[]>(
+        `
+          SELECT
+            t.id,
+            t.capacity_ml AS capacityMl,
+            t.current_level_ml AS currentLevelMl,
+            t.last_refilled_at AS lastRefilledAt
+          FROM tanks t
+          ORDER BY t.id ASC
+          LIMIT 1
+        `,
+      );
+
+      if (!rows[0]) {
+        return null;
+      }
+
+      return {
+        id: rows[0].id,
+        capacityMl: rows[0].capacityMl,
+        currentLevelMl: rows[0].currentLevelMl,
+        lastRefilledAt: rows[0].lastRefilledAt,
+      };
+    },
+
+    async waterPlant(connection, plantId, duration) {
+      const [pointUpdate] = await connection.execute<ResultSetHeader>(
+        `
+          UPDATE points
+          SET
+            last_watering = NOW(),
+            watering_value = CASE
+              WHEN ? > 0 THEN ?
+              ELSE watering_value
+            END
+          WHERE plant_id = ?
+        `,
+        [duration, duration, plantId],
+      );
+
+      await connection.execute<ResultSetHeader>(
+        `
+          UPDATE points
+          SET humidity = LEAST(COALESCE(humidity, 0) + 20, 100)
+          WHERE plant_id = ?
+        `,
+        [plantId],
+      );
+
+      return pointUpdate.affectedRows > 0;
     },
   };
 }

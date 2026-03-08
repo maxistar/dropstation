@@ -17,7 +17,7 @@ export function buildServer(
   app.addHook("onRequest", async (request, reply) => {
     const requestOrigin = request.headers.origin;
 
-    if (requestOrigin && requestOrigin === config.corsOrigin) {
+    if (requestOrigin && config.corsOrigins.includes(requestOrigin)) {
       reply.header("Access-Control-Allow-Origin", requestOrigin);
       reply.header("Vary", "Origin");
       reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
