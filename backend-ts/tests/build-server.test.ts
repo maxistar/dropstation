@@ -9,6 +9,7 @@ function makeConfig(): AppConfig {
     port: 3001,
     nodeEnv: "test",
     logLevel: "silent",
+    corsOrigin: "http://localhost:3000",
     dbHost: "db",
     dbPort: 3306,
     dbName: "dropstation",
@@ -82,6 +83,23 @@ describe("buildServer", () => {
       service: "dropstation-backend-ts",
       status: "ok",
     });
+  });
+
+  it("handles CORS preflight for UI endpoints", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "OPTIONS",
+      url: "/api/ui/v1/devices",
+      headers: {
+        origin: "http://localhost:3000",
+        "access-control-request-method": "GET",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
   });
 
   it("returns 404 for an unknown runtime device", async () => {

@@ -3,6 +3,7 @@ export interface AppConfig {
   port: number;
   nodeEnv: string;
   logLevel: string;
+  corsOrigin: string;
   dbHost: string;
   dbPort: number;
   dbName: string;
@@ -14,6 +15,7 @@ const DEFAULT_HOST = "0.0.0.0";
 const DEFAULT_PORT = 3001;
 const DEFAULT_NODE_ENV = "development";
 const DEFAULT_LOG_LEVEL = "info";
+const DEFAULT_CORS_ORIGIN = "http://localhost:3000";
 const DEFAULT_DB_HOST = "db";
 const DEFAULT_DB_PORT = 3306;
 const DEFAULT_DB_NAME = "dropstation";
@@ -39,6 +41,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port,
     nodeEnv: env.NODE_ENV ?? DEFAULT_NODE_ENV,
     logLevel: env.LOG_LEVEL ?? DEFAULT_LOG_LEVEL,
+    corsOrigin: env.CORS_ORIGIN ?? DEFAULT_CORS_ORIGIN,
     dbHost: env.DB_HOST ?? DEFAULT_DB_HOST,
     dbPort,
     dbName: env.DB_NAME ?? DEFAULT_DB_NAME,

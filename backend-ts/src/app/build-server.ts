@@ -14,6 +14,21 @@ export function buildServer(
     },
   });
 
+  app.addHook("onRequest", async (request, reply) => {
+    const requestOrigin = request.headers.origin;
+
+    if (requestOrigin && requestOrigin === config.corsOrigin) {
+      reply.header("Access-Control-Allow-Origin", requestOrigin);
+      reply.header("Vary", "Origin");
+      reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+      reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    }
+
+    if (request.method === "OPTIONS") {
+      reply.code(204).send();
+    }
+  });
+
   app.get("/", async () => {
     return {
       service: "dropstation-backend-ts",

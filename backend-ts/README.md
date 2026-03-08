@@ -46,6 +46,7 @@ The service loads variables from `.env`. The example file is set up for running 
 
 - `HOST=0.0.0.0`
 - `PORT=3001`
+- `CORS_ORIGIN=http://localhost:3000`
 - `DB_HOST=127.0.0.1`
 - `DB_PORT=3307`
 - `DB_NAME=dropstation`
@@ -53,6 +54,8 @@ The service loads variables from `.env`. The example file is set up for running 
 - `DB_PASSWORD=gotechnies`
 
 If you later run the TypeScript backend inside Docker on the same Compose network, switch DB settings to `DB_HOST=db` and `DB_PORT=3306`.
+
+The backend allows browser requests from `CORS_ORIGIN`, which should match the Nuxt app origin in local development.
 
 ## Validation
 
