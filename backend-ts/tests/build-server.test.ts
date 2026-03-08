@@ -15,6 +15,27 @@ function makeConfig(): AppConfig {
     dbName: "dropstation",
     dbUser: "root",
     dbPassword: "gotechnies",
+    authUsername: "admin",
+    authPassword: "admin",
+    authTokenSecret: "test-secret",
+    authTokenTtlSeconds: 3600,
+  };
+}
+
+async function loginAndGetHeaders(app: ReturnType<typeof buildServer>): Promise<Record<string, string>> {
+  const loginResponse = await app.inject({
+    method: "POST",
+    url: "/api/ui/v1/auth/login",
+    payload: {
+      username: "admin",
+      password: "admin",
+    },
+  });
+
+  expect(loginResponse.statusCode).toBe(200);
+  const payload = loginResponse.json() as { token: string };
+  return {
+    authorization: `Bearer ${payload.token}`,
   };
 }
 
@@ -281,10 +302,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/ui/v1/devices",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -343,10 +366,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/ui/v1/devices",
+      headers: authHeaders,
       payload: {
         name: "Ignored UI Name",
         notes: "",
@@ -401,10 +426,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/ui/v1/devices/9",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -480,10 +507,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "PUT",
       url: "/api/ui/v1/devices/12",
+      headers: authHeaders,
       payload: {
         name: "Ignored Name",
         notes: "Updated notes",
@@ -521,10 +550,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "DELETE",
       url: "/api/ui/v1/devices/15",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(204);
@@ -564,10 +595,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/ui/v1/points",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -619,10 +652,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/ui/v1/dashboard/plants",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -668,10 +703,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/ui/v1/dashboard/water-tank",
+      headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
@@ -698,10 +735,12 @@ describe("buildServer", () => {
       }),
     );
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/ui/v1/dashboard/plants/7/water",
+      headers: authHeaders,
       payload: {
         duration: 30,
       },
@@ -710,6 +749,55 @@ describe("buildServer", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       success: true,
+    });
+  });
+
+  it("rejects unauthenticated access to protected UI routes", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/ui/v1/devices",
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      error: "Unauthorized",
+    });
+  });
+
+  it("returns token for valid login and rejects invalid credentials", async () => {
+    const app = buildServer(makeConfig(), makeDatabaseContext());
+    apps.push(app);
+
+    const successResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/auth/login",
+      payload: {
+        username: "admin",
+        password: "admin",
+      },
+    });
+
+    expect(successResponse.statusCode).toBe(200);
+    expect(successResponse.json()).toMatchObject({
+      tokenType: "Bearer",
+      expiresIn: 3600,
+    });
+
+    const failedResponse = await app.inject({
+      method: "POST",
+      url: "/api/ui/v1/auth/login",
+      payload: {
+        username: "admin",
+        password: "wrong",
+      },
+    });
+
+    expect(failedResponse.statusCode).toBe(403);
+    expect(failedResponse.json()).toEqual({
+      error: "Forbidden",
     });
   });
 });

@@ -1,4 +1,5 @@
-import { useRuntimeConfig } from "#imports";
+import { useRuntimeConfig } from '#imports'
+import { useAuthStore } from '~/stores/authStore'
 
 export interface BackendTsDevice {
   id: number;
@@ -38,43 +39,61 @@ export interface BackendTsDeviceUpsertInput {
 }
 
 export function useBackendTsApi() {
-  const config = useRuntimeConfig();
+  const config = useRuntimeConfig()
+  const authStore = useAuthStore()
+  authStore.ensureHydrated()
 
   const client = $fetch.create({
-    baseURL: config.public.backendTsBaseUrl || "http://localhost:3001",
-  });
+    baseURL: config.public.backendTsBaseUrl || 'http://localhost:3001',
+    onRequest({ options }) {
+      const authHeader = authStore.authHeader
+      if (!authHeader) {
+        return
+      }
+
+      const headers = new Headers(options.headers as HeadersInit | undefined)
+      headers.set('Authorization', authHeader)
+      options.headers = headers
+    },
+    async onResponseError({ response }) {
+      if (response.status === 401) {
+        authStore.clearSession()
+        await navigateTo('/login')
+      }
+    },
+  })
 
   return {
     listDevices() {
-      return client<BackendTsDevice[]>("/api/ui/v1/devices");
+      return client<BackendTsDevice[]>('/api/ui/v1/devices')
     },
 
     getDevice(id: number) {
-      return client<BackendTsDevice>(`/api/ui/v1/devices/${id}`);
+      return client<BackendTsDevice>(`/api/ui/v1/devices/${id}`)
     },
 
     createDevice(input: BackendTsDeviceUpsertInput) {
-      return client<BackendTsDevice>("/api/ui/v1/devices", {
-        method: "POST",
+      return client<BackendTsDevice>('/api/ui/v1/devices', {
+        method: 'POST',
         body: input,
-      });
+      })
     },
 
     updateDevice(id: number, input: BackendTsDeviceUpsertInput) {
       return client<BackendTsDevice>(`/api/ui/v1/devices/${id}`, {
-        method: "PUT",
+        method: 'PUT',
         body: input,
-      });
+      })
     },
 
     deleteDevice(id: number) {
       return client<void>(`/api/ui/v1/devices/${id}`, {
-        method: "DELETE",
-      });
+        method: 'DELETE',
+      })
     },
 
     listPoints() {
-      return client<BackendTsPoint[]>("/api/ui/v1/points");
+      return client<BackendTsPoint[]>('/api/ui/v1/points')
     },
-  };
+  }
 }

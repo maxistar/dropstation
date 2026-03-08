@@ -15,6 +15,27 @@ function makeConfig(): AppConfig {
     dbName: "dropstation",
     dbUser: "root",
     dbPassword: "gotechnies",
+    authUsername: "admin",
+    authPassword: "admin",
+    authTokenSecret: "test-secret",
+    authTokenTtlSeconds: 3600,
+  };
+}
+
+async function loginAndGetHeaders(app: ReturnType<typeof buildServer>): Promise<Record<string, string>> {
+  const loginResponse = await app.inject({
+    method: "POST",
+    url: "/api/ui/v1/auth/login",
+    payload: {
+      username: "admin",
+      password: "admin",
+    },
+  });
+
+  expect(loginResponse.statusCode).toBe(200);
+  const payload = loginResponse.json() as { token: string };
+  return {
+    authorization: `Bearer ${payload.token}`,
   };
 }
 
@@ -141,10 +162,11 @@ describe("UI dashboard integration", () => {
     };
     const app = buildServer(makeConfig(), makeDatabaseContext(state));
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const [plantsResponse, tankResponse] = await Promise.all([
-      app.inject({ method: "GET", url: "/api/ui/v1/dashboard/plants" }),
-      app.inject({ method: "GET", url: "/api/ui/v1/dashboard/water-tank" }),
+      app.inject({ method: "GET", url: "/api/ui/v1/dashboard/plants", headers: authHeaders }),
+      app.inject({ method: "GET", url: "/api/ui/v1/dashboard/water-tank", headers: authHeaders }),
     ]);
 
     expect(plantsResponse.statusCode).toBe(200);
@@ -189,10 +211,12 @@ describe("UI dashboard integration", () => {
     };
     const app = buildServer(makeConfig(), makeDatabaseContext(state));
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const waterResponse = await app.inject({
       method: "POST",
       url: "/api/ui/v1/dashboard/plants/3/water",
+      headers: authHeaders,
       payload: { duration: 40 },
     });
 
@@ -202,6 +226,7 @@ describe("UI dashboard integration", () => {
     const plantsResponse = await app.inject({
       method: "GET",
       url: "/api/ui/v1/dashboard/plants",
+      headers: authHeaders,
     });
     const plants = plantsResponse.json() as Array<{ id: number; soilHumidity: number; wateringDuration: number; status: string }>;
     expect(plants[0]).toMatchObject({
@@ -219,10 +244,12 @@ describe("UI dashboard integration", () => {
     };
     const app = buildServer(makeConfig(), makeDatabaseContext(state));
     apps.push(app);
+    const authHeaders = await loginAndGetHeaders(app);
 
     const invalidIdResponse = await app.inject({
       method: "POST",
       url: "/api/ui/v1/dashboard/plants/not-a-number/water",
+      headers: authHeaders,
       payload: { duration: 30 },
     });
     expect(invalidIdResponse.statusCode).toBe(400);
@@ -230,6 +257,7 @@ describe("UI dashboard integration", () => {
     const invalidDurationResponse = await app.inject({
       method: "POST",
       url: "/api/ui/v1/dashboard/plants/10/water",
+      headers: authHeaders,
       payload: { duration: 0 },
     });
     expect(invalidDurationResponse.statusCode).toBe(400);
@@ -237,6 +265,7 @@ describe("UI dashboard integration", () => {
     const missingPlantResponse = await app.inject({
       method: "POST",
       url: "/api/ui/v1/dashboard/plants/10/water",
+      headers: authHeaders,
       payload: { duration: 20 },
     });
     expect(missingPlantResponse.statusCode).toBe(404);

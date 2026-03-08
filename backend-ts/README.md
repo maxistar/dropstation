@@ -53,6 +53,10 @@ The service loads variables from `.env`. The example file is set up for running 
 - `DB_NAME=dropstation`
 - `DB_USER=root`
 - `DB_PASSWORD=gotechnies`
+- `AUTH_USERNAME=admin`
+- `AUTH_PASSWORD=admin`
+- `AUTH_TOKEN_SECRET=change-me-in-production`
+- `AUTH_TOKEN_TTL_SECONDS=28800`
 
 If you later run the TypeScript backend inside Docker on the same Compose network, switch DB settings to `DB_HOST=db` and `DB_PORT=3306`.
 
@@ -69,6 +73,19 @@ Dashboard-focused UI endpoints:
 - `GET /api/ui/v1/dashboard/plants`: returns dashboard plant cards/counter data
 - `GET /api/ui/v1/dashboard/water-tank`: returns dashboard tank status
 - `POST /api/ui/v1/dashboard/plants/:id/water`: triggers watering for the plant and returns `{ "success": true }`
+
+Password authorization endpoints:
+
+- `POST /api/ui/v1/auth/login`: accepts `{ "username": "...", "password": "..." }` and returns bearer token payload
+- `POST /api/ui/v1/auth/logout`: local logout acknowledgment endpoint
+
+Protected endpoints in this iteration:
+
+- `/api/ui/v1/devices` (+ by-id/create/update/delete)
+- `/api/ui/v1/points`
+- `/api/ui/v1/dashboard/plants`
+- `/api/ui/v1/dashboard/water-tank`
+- `/api/ui/v1/dashboard/plants/:id/water`
 
 ## Validation
 
@@ -88,10 +105,18 @@ curl "http://localhost:3001/api/device/v1/watering?device=1a382ff4-5099-4be1-9e4
 UI/admin endpoint shapes used by Nuxt:
 
 ```bash
-curl "http://localhost:3001/api/ui/v1/devices"
-curl "http://localhost:3001/api/ui/v1/points"
-curl "http://localhost:3001/api/ui/v1/dashboard/plants"
-curl "http://localhost:3001/api/ui/v1/dashboard/water-tank"
+TOKEN=$(curl -sS -X POST "http://localhost:3001/api/ui/v1/auth/login" \
+  -H "content-type: application/json" \
+  -d '{"username":"admin","password":"admin"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+```
+
+Use `Authorization: Bearer $TOKEN` for protected routes:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/devices"
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/points"
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboard/plants"
+curl -H "Authorization: Bearer $TOKEN" "http://localhost:3001/api/ui/v1/dashboard/water-tank"
 ```
 
 ## Coexistence with PHP

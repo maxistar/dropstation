@@ -44,7 +44,7 @@ export function buildServer(
     };
   });
 
-  registerUiRoutes(app, database);
+  registerUiRoutes(app, database, config);
   registerRuntimeRoutes(app, database);
 
   return app;

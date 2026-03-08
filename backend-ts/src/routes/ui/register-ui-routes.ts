@@ -1,6 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import { UiService } from "../../modules/ui/ui-service.js";
 import type { DatabaseContext } from "../../db/index.js";
+import type { AppConfig } from "../../config/load-config.js";
+import {
+  buildUiAuthPreHandler,
+  createAuthToken,
+  sendForbidden,
+  type AuthLoginRequestBody,
+  verifyCredentials,
+} from "../../auth/password-auth.js";
 
 interface DeviceParams {
   id: string;
@@ -24,8 +32,10 @@ interface WaterPlantBody {
 export function registerUiRoutes(
   app: FastifyInstance,
   database: DatabaseContext,
+  config: AppConfig,
 ): void {
   const uiService = new UiService(database);
+  const requireUiAuth = buildUiAuthPreHandler(config);
 
   app.get("/api/ui/v1", async () => {
     return {
@@ -34,19 +44,37 @@ export function registerUiRoutes(
     };
   });
 
-  app.get("/api/ui/v1/devices", async () => {
+  app.post<{ Body: AuthLoginRequestBody }>("/api/ui/v1/auth/login", async (request, reply) => {
+    if (!verifyCredentials(request.body ?? {}, config)) {
+      sendForbidden(reply);
+      return;
+    }
+
+    const username = request.body.username!.trim();
+    return {
+      token: createAuthToken(username, config),
+      expiresIn: config.authTokenTtlSeconds,
+      tokenType: "Bearer",
+    };
+  });
+
+  app.post("/api/ui/v1/auth/logout", async () => {
+    return { success: true };
+  });
+
+  app.get("/api/ui/v1/devices", { preHandler: requireUiAuth }, async () => {
     return uiService.listDevices();
   });
 
-  app.get("/api/ui/v1/points", async () => {
+  app.get("/api/ui/v1/points", { preHandler: requireUiAuth }, async () => {
     return uiService.listPoints();
   });
 
-  app.get("/api/ui/v1/dashboard/plants", async () => {
+  app.get("/api/ui/v1/dashboard/plants", { preHandler: requireUiAuth }, async () => {
     return uiService.listDashboardPlants();
   });
 
-  app.get("/api/ui/v1/dashboard/water-tank", async (_request, reply) => {
+  app.get("/api/ui/v1/dashboard/water-tank", { preHandler: requireUiAuth }, async (_request, reply) => {
     try {
       return await uiService.getDashboardTank();
     } catch (error) {
@@ -61,6 +89,7 @@ export function registerUiRoutes(
 
   app.post<{ Params: DashboardPlantParams; Body: WaterPlantBody }>(
     "/api/ui/v1/dashboard/plants/:id/water",
+    { preHandler: requireUiAuth },
     async (request, reply) => {
       const plantId = parseDeviceId(request.params.id);
       if (plantId === null) {
@@ -88,7 +117,7 @@ export function registerUiRoutes(
     },
   );
 
-  app.get<{ Params: DeviceParams }>("/api/ui/v1/devices/:id", async (request, reply) => {
+  app.get<{ Params: DeviceParams }>("/api/ui/v1/devices/:id", { preHandler: requireUiAuth }, async (request, reply) => {
     const id = parseDeviceId(request.params.id);
 
     if (id === null) {
@@ -110,6 +139,7 @@ export function registerUiRoutes(
 
   app.post<{ Body: UpsertDeviceBody }>(
     "/api/ui/v1/devices",
+    { preHandler: requireUiAuth },
     async (request, reply) => {
       const body = request.body ?? {};
 
@@ -131,6 +161,7 @@ export function registerUiRoutes(
 
   app.put<{ Params: DeviceParams; Body: UpsertDeviceBody }>(
     "/api/ui/v1/devices/:id",
+    { preHandler: requireUiAuth },
     async (request, reply) => {
       const id = parseDeviceId(request.params.id);
 
@@ -165,6 +196,7 @@ export function registerUiRoutes(
 
   app.delete<{ Params: DeviceParams }>(
     "/api/ui/v1/devices/:id",
+    { preHandler: requireUiAuth },
     async (request, reply) => {
       const id = parseDeviceId(request.params.id);
 

@@ -9,6 +9,10 @@ export interface AppConfig {
   dbName: string;
   dbUser: string;
   dbPassword: string;
+  authUsername: string;
+  authPassword: string;
+  authTokenSecret: string;
+  authTokenTtlSeconds: number;
 }
 
 const DEFAULT_HOST = "0.0.0.0";
@@ -22,12 +26,18 @@ const DEFAULT_DB_PORT = 3306;
 const DEFAULT_DB_NAME = "dropstation";
 const DEFAULT_DB_USER = "root";
 const DEFAULT_DB_PASSWORD = "gotechnies";
+const DEFAULT_AUTH_USERNAME = "admin";
+const DEFAULT_AUTH_PASSWORD = "admin";
+const DEFAULT_AUTH_TOKEN_SECRET = "change-me-in-production";
+const DEFAULT_AUTH_TOKEN_TTL_SECONDS = 60 * 60 * 8;
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const rawPort = env.PORT ?? `${DEFAULT_PORT}`;
   const port = Number.parseInt(rawPort, 10);
   const rawDbPort = env.DB_PORT ?? `${DEFAULT_DB_PORT}`;
   const dbPort = Number.parseInt(rawDbPort, 10);
+  const rawTokenTtl = env.AUTH_TOKEN_TTL_SECONDS ?? `${DEFAULT_AUTH_TOKEN_TTL_SECONDS}`;
+  const authTokenTtlSeconds = Number.parseInt(rawTokenTtl, 10);
 
   if (Number.isNaN(port) || port <= 0) {
     throw new Error(`Invalid PORT value: ${rawPort}`);
@@ -35,6 +45,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
 
   if (Number.isNaN(dbPort) || dbPort <= 0) {
     throw new Error(`Invalid DB_PORT value: ${rawDbPort}`);
+  }
+
+  if (Number.isNaN(authTokenTtlSeconds) || authTokenTtlSeconds <= 0) {
+    throw new Error(`Invalid AUTH_TOKEN_TTL_SECONDS value: ${rawTokenTtl}`);
   }
 
   return {
@@ -48,6 +62,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     dbName: env.DB_NAME ?? DEFAULT_DB_NAME,
     dbUser: env.DB_USER ?? DEFAULT_DB_USER,
     dbPassword: env.DB_PASSWORD ?? DEFAULT_DB_PASSWORD,
+    authUsername: env.AUTH_USERNAME ?? DEFAULT_AUTH_USERNAME,
+    authPassword: env.AUTH_PASSWORD ?? DEFAULT_AUTH_PASSWORD,
+    authTokenSecret: env.AUTH_TOKEN_SECRET ?? DEFAULT_AUTH_TOKEN_SECRET,
+    authTokenTtlSeconds,
   };
 }
 
