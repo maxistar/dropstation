@@ -26,6 +26,7 @@ interface UiDeviceRow extends RowDataPacket {
   id: number;
   userId: number | null;
   placeId: number | null;
+  name: string | null;
   deviceKey: string;
   lastAccess: string | null;
   notes: string | null;
@@ -139,6 +140,7 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
             d.id,
             d.user_id AS userId,
             d.place_id AS placeId,
+            d.name,
             d.device_key AS deviceKey,
             d.last_access AS lastAccess,
             d.notes,
@@ -163,6 +165,7 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
             d.id,
             d.user_id AS userId,
             d.place_id AS placeId,
+            d.name,
             d.device_key AS deviceKey,
             d.last_access AS lastAccess,
             d.notes,
@@ -350,10 +353,11 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
 
     async createDevice(connection, input) {
       const [result] = await connection.execute<ResultSetHeader>(
-        "INSERT INTO devices (user_id, place_id, notes, device_key, sleep_duration, activity_number, check_interval) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO devices (user_id, place_id, name, notes, device_key, sleep_duration, activity_number, check_interval) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
           input.userId ?? 1,
           input.placeId,
+          normalizeDeviceName(input.name, input.notes),
           normalizeNotes(input.notes),
           input.deviceKey,
           input.sleepDuration,
@@ -367,9 +371,10 @@ export function createUiRepositories(pool: DatabasePool): UiRepositories {
 
     async updateDevice(connection, input) {
       await connection.execute<ResultSetHeader>(
-        "UPDATE devices SET place_id = ?, notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
+        "UPDATE devices SET place_id = ?, name = ?, notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
         [
           input.placeId,
+          normalizeDeviceName(input.name, input.notes),
           normalizeNotes(input.notes),
           input.deviceKey,
           input.sleepDuration,
@@ -654,6 +659,7 @@ function mapUiDeviceRow(row: UiDeviceRow): UiDeviceRecord {
     id: row.id,
     userId: row.userId,
     placeId: row.placeId,
+    name: row.name ?? "",
     deviceKey: row.deviceKey,
     lastAccess: row.lastAccess,
     notes: row.notes,
@@ -723,6 +729,20 @@ function normalizeNotes(notes?: string): string {
 
 function normalizeName(name: string): string {
   return name.trim();
+}
+
+function normalizeDeviceName(name?: string, notes?: string): string {
+  const normalizedName = name?.trim();
+  if (normalizedName) {
+    return normalizedName;
+  }
+
+  const normalizedNotes = notes?.trim();
+  if (normalizedNotes) {
+    return normalizedNotes;
+  }
+
+  return "Unnamed device";
 }
 
 function normalizeNullable(value?: string): string | null {

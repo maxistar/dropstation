@@ -312,6 +312,7 @@ describe("buildServer", () => {
         id: 7,
         userId: 1,
         placeId: 1,
+        name: "Greenhouse controller",
         deviceKey: "dev-7",
         lastAccess: null,
         notes: "Greenhouse controller",
@@ -370,6 +371,7 @@ describe("buildServer", () => {
         id: 42,
         userId: 1,
         placeId: null,
+        name: "Ignored UI Name",
         deviceKey: "new-device",
         lastAccess: null,
         notes: "",
@@ -422,7 +424,7 @@ describe("buildServer", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json()).toEqual({
       id: 42,
-      name: "Device 42",
+      name: "Ignored UI Name",
       placeId: null,
       notes: "",
       deviceKey: "new-device",
@@ -442,6 +444,7 @@ describe("buildServer", () => {
         id: 9,
         userId: 1,
         placeId: 1,
+        name: "Balcony controller",
         deviceKey: "dev-9",
         lastAccess: null,
         notes: "Balcony controller",
@@ -498,6 +501,7 @@ describe("buildServer", () => {
         id: 12,
         userId: 1,
         placeId: null,
+        name: "Old name",
         deviceKey: "old-key",
         lastAccess: null,
         notes: "Old notes",
@@ -514,6 +518,7 @@ describe("buildServer", () => {
         id: 12,
         userId: 1,
         placeId: null,
+        name: "Updated Name",
         deviceKey: "new-key",
         lastAccess: null,
         notes: "Updated notes",
@@ -542,7 +547,7 @@ describe("buildServer", () => {
         execute: async (sql) => {
           if (
             sql.includes(
-              "UPDATE devices SET place_id = ?, notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
+              "UPDATE devices SET place_id = ?, name = ?, notes = ?, device_key = ?, sleep_duration = ?, activity_number = ?, check_interval = ? WHERE id = ?",
             )
           ) {
             return [{ affectedRows: 1 }, {}];
@@ -560,7 +565,7 @@ describe("buildServer", () => {
       url: "/api/ui/v1/devices/12",
       headers: authHeaders,
       payload: {
-        name: "Ignored Name",
+        name: "Updated Name",
         placeId: 2,
         notes: "Updated notes",
         deviceKey: "new-key",
@@ -573,7 +578,7 @@ describe("buildServer", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       id: 12,
-      name: "Updated notes",
+      name: "Updated Name",
       placeId: null,
       notes: "Updated notes",
       deviceKey: "new-key",

@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <h1>Edit Device</h1>
-    <v-form @submit.prevent="updateDevice">
+    <v-form ref="formRef" @submit.prevent="submitDeviceUpdate">
       <TextFieldWithLabel
           v-model="name"
           title="Name"
@@ -41,7 +41,7 @@
           label="Check Interval (sec)"
           required
       ></v-text-field>
-      <v-btn type="submit" color="primary">Update</v-btn>
+      <v-btn type="button" color="primary" @click="submitDeviceUpdate">Update</v-btn>
     </v-form>
   </v-container>
 </template>
@@ -63,6 +63,7 @@ const router = useRouter();
 const route = useRoute();
 const id = route.params.id;
 const deviceStore = useDeviceStore();
+const formRef = ref<InstanceType<typeof VForm> | null>(null);
 
 const fetchDevice = async () => {
   const device = await deviceStore.fetchDevice(Number(id));
@@ -87,11 +88,19 @@ const updateDevice = async () => {
     activityNumber: Math.trunc(Number(activityNumber.value)),
     checkInterval: Math.trunc(Number(checkInterval.value)),
   };
-
   await deviceStore.updateDevice(Number(id), {
     ...normalizedPayload,
   });
   router.push('/devices');
+};
+
+const submitDeviceUpdate = async () => {
+  const validation = await formRef.value?.validate();
+  if (!validation?.valid) {
+    return;
+  }
+
+  await updateDevice();
 };
 
 onMounted(fetchDevice);

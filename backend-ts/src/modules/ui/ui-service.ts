@@ -294,9 +294,10 @@ export class UiService {
   }
 
   private toDeviceView(device: UiDeviceRecord): UiDeviceView {
+    const normalizedName = device.name?.trim();
     return {
       id: device.id,
-      name: buildDeviceName(device),
+      name: normalizedName || `Device ${device.id}`,
       placeId: device.placeId,
       notes: device.notes ?? "",
       deviceKey: device.deviceKey,
@@ -399,15 +400,6 @@ export class UiService {
       status,
     };
   }
-}
-
-function buildDeviceName(device: UiDeviceRecord): string {
-  const trimmedNotes = device.notes?.trim();
-  if (trimmedNotes) {
-    return trimmedNotes;
-  }
-
-  return `Device ${device.id}`;
 }
 
 function buildPointName(point: UiPointRecord): string {

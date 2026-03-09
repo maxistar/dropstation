@@ -2,6 +2,7 @@ export interface UiDeviceRecord {
   id: number;
   userId: number | null;
   placeId: number | null;
+  name: string;
   deviceKey: string;
   lastAccess: string | null;
   notes: string | null;
