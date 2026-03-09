@@ -23,6 +23,42 @@
           label="Device Key"
           required
       ></v-text-field>
+      <div class="text-field-title">
+        Place ID
+      </div>
+      <v-text-field
+          v-model.number="placeId"
+          type="number"
+          label="Place ID"
+          required
+      ></v-text-field>
+      <div class="text-field-title">
+        Sleep Duration (sec)
+      </div>
+      <v-text-field
+          v-model.number="sleepDuration"
+          type="number"
+          label="Sleep Duration (sec)"
+          required
+      ></v-text-field>
+      <div class="text-field-title">
+        Activity Number
+      </div>
+      <v-text-field
+          v-model.number="activityNumber"
+          type="number"
+          label="Activity Number"
+          required
+      ></v-text-field>
+      <div class="text-field-title">
+        Check Interval (sec)
+      </div>
+      <v-text-field
+          v-model.number="checkInterval"
+          type="number"
+          label="Check Interval (sec)"
+          required
+      ></v-text-field>
       <v-btn type="submit" color="primary">Create</v-btn>
     </v-form>
   </v-container>
@@ -37,11 +73,29 @@ import { VContainer, VForm, VTextField, VBtn } from 'vuetify/components';
 const name = ref('');
 const notes = ref('');
 const deviceKey = ref('');
+const placeId = ref(1);
+const sleepDuration = ref(3600);
+const activityNumber = ref(0);
+const checkInterval = ref(900);
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
 const createDevice = async () => {
-  await deviceStore.createDevice(name.value, notes.value, deviceKey.value);
+  const normalizedName = name.value.trim();
+  const normalizedNotes = notes.value.trim() || normalizedName;
+  const normalizedPayload = {
+    placeId: Math.trunc(Number(placeId.value)),
+    name: normalizedName,
+    notes: normalizedNotes,
+    deviceKey: deviceKey.value.trim(),
+    sleepDuration: Math.trunc(Number(sleepDuration.value)),
+    activityNumber: Math.trunc(Number(activityNumber.value)),
+    checkInterval: Math.trunc(Number(checkInterval.value)),
+  };
+
+  await deviceStore.createDevice({
+    ...normalizedPayload,
+  });
   router.push('/devices');
 };
 </script>

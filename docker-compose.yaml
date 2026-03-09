@@ -36,3 +36,12 @@ services:
      - 8080:80
     volumes:
      - /sessions
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swaggerui_dropstation
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    ports:
+      - 8081:8080
+    volumes:
+      - ./docs:/app:ro
