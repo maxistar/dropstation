@@ -1,23 +1,22 @@
 <template>
   <div>
     <h1>Points</h1>
-    <DeviceItem
-        v-for="device in deviceStore.points"
-        :key="device.id"
-        :device="device"
-        @edit="editDevice"
-        @delete="deleteDevice"
+    <PointItem
+        v-for="point in deviceStore.points"
+        :key="point.id"
+        :device="point"
+        @edit="editPoint"
+        @delete="deletePoint"
     />
+    <v-btn @click="createPoint" color="primary"><v-icon icon="mdi-pen-plus" /> Create Point</v-btn>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useDeviceStore } from '~/stores/deviceStore';
-import DeviceItem from '~/components/DeviceItem.vue';
+import PointItem from '~/components/PointItem.vue';
 import { VBtn } from 'vuetify/components';
-import { storeToRefs } from 'pinia'
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
@@ -25,5 +24,17 @@ const deviceStore = useDeviceStore();
 useAsyncData('points', async () => await deviceStore.fetchPoints(), {
   initialCache: false
 });
+
+const createPoint = () => {
+  router.push('/points/create');
+};
+
+const editPoint = (id: number) => {
+  router.push(`/points/${id}/edit`);
+};
+
+const deletePoint = async (id: number) => {
+  await deviceStore.deletePoint(id);
+};
 
 </script>

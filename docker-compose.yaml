@@ -13,15 +13,18 @@ services:
       - ./backend:/var/www
       
   db:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: database_dropstation
     ports:
       - 3307:3306
     environment:
-      MYSQL_DATABASE: mysql_server
+      MYSQL_DATABASE: dropstation
       MYSQL_USER: magento2
       MYSQL_PASSWORD: gotechnies
       MYSQL_ROOT_PASSWORD: gotechnies
+      MYSQL_ROOT_HOST: "%"
+    command:
+      - --default-authentication-plugin=mysql_native_password
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin_dropstation
@@ -33,3 +36,12 @@ services:
      - 8080:80
     volumes:
      - /sessions
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swaggerui_dropstation
+    environment:
+      SWAGGER_JSON: /app/openapi.yaml
+    ports:
+      - 8081:8080
+    volumes:
+      - ./docs:/app:ro
