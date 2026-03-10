@@ -6,9 +6,12 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "lint": "vue-tsc --noEmit -p tsconfig.json",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -25,12 +28,14 @@
     "@nuxt/test-utils": "^3.14.1",
     "@nuxt/types": "^2.18.1",
     "@nuxt/typescript-build": "^3.0.2",
-    "@pinia/testing": "^0.1.5",
+    "@pinia/testing": "0.1.5",
     "@types/node": "^22.0.0",
     "@vue/test-utils": "^2.4.6",
     "happy-dom": "^15.7.3",
     "playwright-core": "^1.46.1",
+    "typescript": "^5.8.2",
     "vite-plugin-vuetify": "^2.0.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "vue-tsc": "^2.1.10"
   }
 }

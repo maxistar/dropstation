@@ -1,6 +1,6 @@
-import { useAuthStore } from "#imports";
-import {CookieRef, navigateTo, useCookie, useRuntimeConfig} from "#app";
-import {ModuleOptions} from "../../module";
+import { navigateTo, useCookie, useRuntimeConfig} from "#app";
+import type { CookieRef } from "#app";
+import type { ResolvedModuleOptions } from "../../module";
 import {generateRandomString, getChallengeFromVerifier} from "../support";
 
 declare interface ComposableOptions {
@@ -14,7 +14,7 @@ let refreshToken: CookieRef<any>;
 export default async (options: ComposableOptions = {
     fetchUserOnInitialization: false
 }) => {
-    const authConfig = useRuntimeConfig().public.oauth as ModuleOptions;
+    const authConfig = useRuntimeConfig().public.oauth as ResolvedModuleOptions;
     if (user == null) user = useCookie('oauth_user');
     if (accessToken == null) accessToken = useCookie('oauth_access_token');
     if (refreshToken == null) refreshToken = useCookie('oauth_refresh_token');
@@ -55,7 +55,7 @@ export default async (options: ComposableOptions = {
             const codeVerifier = useCookie<string>('oauth_code_verifier');
             codeVerifier.value = generateRandomString();
 
-            params.set('code_challenge', await getChallengeFromVerifier(codeVerifier.value))
+            params.set('code_challenge', await getChallengeFromVerifier(codeVerifier.value ?? ''))
             params.set('code_challenge_method', 'S256')
         }
 
