@@ -24,7 +24,29 @@ export interface ModuleOptions {
     scope?: string[]
 }
 
-const defaults: ModuleOptions = {
+export interface ResolvedModuleOptions {
+    redirect: {
+        login: string,
+        logout: string,
+        callback: string,
+        home: string
+    },
+    endpoints: {
+        authorization: string,
+        token: string,
+        userInfo: string,
+        logout: string | null
+    },
+    refreshToken: {
+        maxAge: number,
+    }
+    clientId: string,
+    responseType: 'token' | 'code',
+    prompt: '' | 'none' | 'login' | 'consent',
+    scope: string[]
+}
+
+const defaults: ResolvedModuleOptions = {
     redirect: {
         login: '/login/',
         logout: '/',
@@ -58,7 +80,7 @@ export default defineNuxtModule<ModuleOptions>({
 
         const options = defu(moduleOptions, {
             ...defaults
-        })
+        }) as ResolvedModuleOptions
         
                 // Set up runtime configuration
                 nuxt.options.runtimeConfig = nuxt.options.runtimeConfig || {public: {}}

@@ -16,14 +16,11 @@
 import { useRouter } from 'vue-router';
 import { useDeviceStore } from '~/stores/deviceStore';
 import PointItem from '~/components/PointItem.vue';
-import { VBtn } from 'vuetify/components';
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('points', async () => await deviceStore.fetchPoints(), {
-  initialCache: false
-});
+useAsyncData('points', async () => await deviceStore.fetchPoints());
 
 const createPoint = () => {
   router.push('/points/create');

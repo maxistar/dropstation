@@ -16,14 +16,11 @@
 import { useRouter } from 'vue-router';
 import { useDeviceStore } from '~/stores/deviceStore';
 import PlantItem from '~/components/PlantItem.vue';
-import { VBtn } from 'vuetify/components';
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('plants', async () => await deviceStore.fetchPlants(), {
-  initialCache: false
-});
+useAsyncData('plants', async () => await deviceStore.fetchPlants());
 
 const createPlant = () => {
   router.push('/plants/create');

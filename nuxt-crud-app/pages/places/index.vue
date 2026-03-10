@@ -16,14 +16,11 @@
 import { useRouter } from 'vue-router';
 import { useDeviceStore } from '~/stores/deviceStore';
 import PlaceItem from '~/components/PlaceItem.vue';
-import { VBtn } from 'vuetify/components';
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('places', async () => await deviceStore.fetchPlaces(), {
-  initialCache: false
-});
+useAsyncData('places', async () => await deviceStore.fetchPlaces());
 
 const createPlace = () => {
   router.push('/places/create');

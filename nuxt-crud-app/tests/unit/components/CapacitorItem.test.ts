@@ -1,6 +1,6 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { it, expect, describe } from 'vitest'
-import CapacitorItem from '../../components/CapacitorItem.vue'
+import CapacitorItem from '../../../components/CapacitorItem.vue'
 
 describe('AppNumber', () => {
     it('can mount the component', async () => {  

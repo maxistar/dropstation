@@ -1,8 +1,7 @@
 import {addRouteMiddleware, defineNuxtPlugin, navigateTo, useCookie} from '#app'
 import useAuth from "./composables/useAuth"
-import {RouteLocationNormalized} from "vue-router";
-import {ModuleOptions} from "../module";
-import { useAuthStore } from "#imports";
+import type { RouteLocationNormalized } from "vue-router";
+import type { ResolvedModuleOptions } from "../module";
 
 interface AccessToken {
     access_token: string,
@@ -15,7 +14,7 @@ interface AccessToken {
 export default defineNuxtPlugin(() => {
     const resolveUsingToken = async (
         to: RouteLocationNormalized,
-        authConfig: ModuleOptions,
+        authConfig: ResolvedModuleOptions,
         setBearerToken: (token: string, tokenType: string, expires: number) => Promise<void>
     ) => {
         const hashParams = new URLSearchParams(to.hash.substring(1))
@@ -33,7 +32,7 @@ export default defineNuxtPlugin(() => {
 
     const resolveUsingCode = async (
         to: RouteLocationNormalized,
-        authConfig: ModuleOptions,
+        authConfig: ResolvedModuleOptions,
         setBearerToken: (token: string, tokenType: string, expires: number) => Promise<void>,
         setRefreshToken: (token: string, tokenType: string, expires: number) => Promise<void>
     ) => {
@@ -53,7 +52,7 @@ export default defineNuxtPlugin(() => {
             formData.append('grant_type', 'authorization_code')
             formData.append('client_id', authConfig.clientId)
             formData.append('redirect_uri', window.location.origin + authConfig.redirect.callback)
-            formData.append('code_verifier', codeVerifier.value)
+            formData.append('code_verifier', codeVerifier.value ?? '')
             formData.append('code', code)
 
             const response: Response = await fetch(authConfig.endpoints.token, {

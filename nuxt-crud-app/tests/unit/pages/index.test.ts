@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
-import IndexPage from '../../pages/index.vue'
+import IndexPage from '../../../pages/index.vue'
 import { afterEach } from 'node:test'
 
 describe('IndexPage', () => {

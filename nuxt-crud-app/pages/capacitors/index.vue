@@ -15,15 +15,12 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { useDeviceStore } from '~/stores/deviceStore';
-import { VBtn } from 'vuetify/components';
 import CapacitorItem from "~/components/CapacitorItem.vue";
 
 const router = useRouter();
 const deviceStore = useDeviceStore();
 
-useAsyncData('capacitors', async () => await deviceStore.fetchCapacitors(), {
-  initialCache: false
-});
+useAsyncData('capacitors', async () => await deviceStore.fetchCapacitors());
 
 const createCapacitor = () => {
   router.push('/capacitors/create');
