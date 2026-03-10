@@ -113,6 +113,29 @@ curl -X POST -H "Content-Type: application/json" -d '{"nextCall":123, "battery":
 
 ```
 
+## Dropstation CI Quality Gates
+
+The Dropstation quality-gate pipeline is defined at:
+
+- `.github/workflows/dropstation-quality-gates.yml`
+
+It runs lint and tests for both independently deployable subprojects:
+
+- `backend-ts`
+- `nuxt-crud-app`
+
+Run the same checks locally:
+
+```bash
+cd backend-ts
+npm run lint
+npm run test:ci
+
+cd ../nuxt-crud-app
+yarn lint
+yarn test:ci
+```
+
 
 ## Node Red
 

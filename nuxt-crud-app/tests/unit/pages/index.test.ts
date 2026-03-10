@@ -2,7 +2,6 @@ import { mount } from '@vue/test-utils'
 import { describe, it, expect, vi } from 'vitest'
 import IndexPage from '../../pages/index.vue'
 import { afterEach } from 'node:test'
-import { createTestingPinia } from '@pinia/testing'
 
 describe('IndexPage', () => {
     afterEach(() => {
@@ -11,10 +10,13 @@ describe('IndexPage', () => {
     it('renders the home page', () => {
 
         expect(IndexPage).toBeTruthy()
-        const pinia = createTestingPinia({
-            createSpy: vi.fn,
-          })
-        const wrapper = mount(IndexPage)
+        const wrapper = mount(IndexPage, {
+            global: {
+                stubs: {
+                    VBtn: true,
+                },
+            },
+        })
         expect(wrapper.html()).not.toContain('Login')
         // const wrapper = mount(IndexPage, {
         //     global: {

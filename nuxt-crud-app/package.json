@@ -6,9 +6,12 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
+    "lint": "nuxt typecheck",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
