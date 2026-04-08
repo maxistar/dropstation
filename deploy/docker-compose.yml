@@ -1,0 +1,19 @@
+services:
+  backend-ts:
+    image: dropstation-backend-ts:latest
+    container_name: dropstation-backend-ts
+    restart: always
+    environment:
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-3001}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      CORS_ADDITIONAL_ORIGIN: ${CORS_ADDITIONAL_ORIGIN:-http://localhost:4200}
+      DB_HOST: ${DB_HOST:-127.0.0.1}
+      DB_PORT: ${DB_PORT:-3307}
+      DB_NAME: ${DB_NAME:-dropstation}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-gotechnies}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-change-me-in-production}
+      AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-28800}
+    ports:
+      - "127.0.0.1:3001:3001"
