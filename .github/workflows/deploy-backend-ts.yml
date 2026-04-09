@@ -1,0 +1,71 @@
+name: Build and Deploy backend-ts
+
+on:
+  push:
+    branches: ["dev"]
+    paths:
+      - "backend-ts/**"
+      - "deploy/**"
+      - ".github/workflows/deploy-backend-ts.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      IMAGE_NAME: dropstation-backend-ts
+      IMAGE_TAG: latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Resolve deploy variables
+        run: |
+          echo "DEPLOY_HOST=${{ secrets.DEPLOY_HOST }}" >> $GITHUB_ENV
+          echo "DEPLOY_USER=${{ secrets.DEPLOY_USER }}" >> $GITHUB_ENV
+          echo "DEPLOY_PORT=${{ secrets.DEPLOY_PORT }}" >> $GITHUB_ENV
+          echo "DEPLOY_PATH=${{ secrets.DEPLOY_PATH }}" >> $GITHUB_ENV
+          if [ -z "${{ secrets.DEPLOY_PORT }}" ]; then echo "DEPLOY_PORT=22" >> $GITHUB_ENV; fi
+          if [ -z "${{ secrets.DEPLOY_PATH }}" ]; then echo "DEPLOY_PATH=/opt/dropstation" >> $GITHUB_ENV; fi
+
+      - name: Validate required secrets
+        run: |
+          test -n "${DEPLOY_HOST}" || { echo "Missing required secret: DEPLOY_HOST"; exit 1; }
+          test -n "${DEPLOY_USER}" || { echo "Missing required secret: DEPLOY_USER"; exit 1; }
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${DEPLOY_PORT}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Build Docker image
+        run: docker build -f backend-ts/Dockerfile -t ${IMAGE_NAME}:${IMAGE_TAG} backend-ts
+
+      - name: Export Docker image archive
+        run: docker save ${IMAGE_NAME}:${IMAGE_TAG} | gzip > ${IMAGE_NAME}_${IMAGE_TAG}.tar.gz
+
+      - name: Ensure deploy directory exists on server
+        run: |
+          ssh -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "mkdir -p '${DEPLOY_PATH}'"
+
+      - name: Upload image archive to server
+        run: |
+          scp -P "${DEPLOY_PORT}" ${IMAGE_NAME}_${IMAGE_TAG}.tar.gz \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+
+      - name: Load image and restart docker compose on server
+        run: |
+          ssh -p "${DEPLOY_PORT}" "${DEPLOY_USER}@${DEPLOY_HOST}" << EOF
+          set -e
+          cd "${DEPLOY_PATH}"
+          docker load -i ${IMAGE_NAME}_${IMAGE_TAG}.tar.gz
+          docker compose -f deploy/docker-compose.yml up -d
+          EOF

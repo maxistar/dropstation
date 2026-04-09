@@ -1,4 +1,10 @@
 .idea
+.vscode
+.env
+backend/.java
 backend/vendor
 backend/inc/config/site.live.conf.php
 Arduino/simplepod/controller01.h
+node_modules
+Arduino/simplepod/config.dist.h
+Arduino/simplepod/config.dist.h.*

@@ -1,0 +1,1172 @@
+openapi: 3.1.0
+info:
+  title: Watering Product API (Design-Only)
+  version: 0.1.0
+  description: |
+    Design-first OpenAPI specification derived from canonical API docs.
+    This specification is for exploration and alignment only (no implementation implied).
+servers:
+  - url: http://localhost
+    description: Local development
+
+tags:
+  - name: Plants
+  - name: Points
+  - name: Devices
+  - name: Tanks
+  - name: Schedules
+  - name: Events
+  - name: Commands
+  - name: Device Runtime
+
+paths:
+  /api/ui/v1/plants:
+    get:
+      tags: [Plants]
+      summary: List plants
+      responses:
+        '200':
+          description: Plant list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantListResponse'
+    post:
+      tags: [Plants]
+      summary: Create plant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantCreateRequest'
+      responses:
+        '201':
+          description: Plant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/plants/{plantId}:
+    parameters:
+      - $ref: '#/components/parameters/PlantIdPath'
+    get:
+      tags: [Plants]
+      summary: Get plant by ID
+      responses:
+        '200':
+          description: Plant details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags: [Plants]
+      summary: Update plant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantUpdateRequest'
+      responses:
+        '200':
+          description: Updated plant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/plants/{plantId}/insolation-policy:
+    parameters:
+      - $ref: '#/components/parameters/PlantIdPath'
+    patch:
+      tags: [Plants]
+      summary: Update plant insolation policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantInsolationPolicyPatch'
+      responses:
+        '200':
+          description: Updated plant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/plants/{plantId}/watering-policy:
+    parameters:
+      - $ref: '#/components/parameters/PlantIdPath'
+    patch:
+      tags: [Plants]
+      summary: Update plant watering policy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlantWateringPolicyPatch'
+      responses:
+        '200':
+          description: Updated plant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlantResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/points:
+    get:
+      tags: [Points]
+      summary: List points
+      parameters:
+        - name: deviceId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Point list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointListResponse'
+
+  /api/ui/v1/points/{pointId}:
+    parameters:
+      - $ref: '#/components/parameters/PointIdPath'
+    patch:
+      tags: [Points]
+      summary: Update point assignment/config
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PointPatchRequest'
+      responses:
+        '200':
+          description: Updated point
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/devices:
+    get:
+      tags: [Devices]
+      summary: List devices
+      responses:
+        '200':
+          description: Device list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceListResponse'
+
+  /api/ui/v1/devices/{deviceId}:
+    parameters:
+      - $ref: '#/components/parameters/DeviceIdPath'
+    patch:
+      tags: [Devices]
+      summary: Update device configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DevicePatchRequest'
+      responses:
+        '200':
+          description: Updated device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/tanks:
+    get:
+      tags: [Tanks]
+      summary: List tanks
+      parameters:
+        - name: zoneId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tank list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TankListResponse'
+
+  /api/ui/v1/tanks/{tankId}/refill:
+    parameters:
+      - $ref: '#/components/parameters/TankIdPath'
+    post:
+      tags: [Tanks]
+      summary: Record tank refill
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TankRefillRequest'
+      responses:
+        '200':
+          description: Updated tank state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TankResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/schedules:
+    get:
+      tags: [Schedules]
+      summary: List schedules
+      parameters:
+        - name: deviceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: plantId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: eventType
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/ScheduleEventType'
+      responses:
+        '200':
+          description: Schedule list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleListResponse'
+    post:
+      tags: [Schedules]
+      summary: Create schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScheduleCreateRequest'
+      responses:
+        '201':
+          description: Schedule created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/schedules/{scheduleId}:
+    parameters:
+      - $ref: '#/components/parameters/ScheduleIdPath'
+    patch:
+      tags: [Schedules]
+      summary: Patch schedule (e.g. enable/disable)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SchedulePatchRequest'
+      responses:
+        '200':
+          description: Updated schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/events:
+    get:
+      tags: [Events]
+      summary: List events
+      parameters:
+        - name: deviceId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: plantId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: eventType
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EventType'
+        - name: from
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Event list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventListResponse'
+
+  /api/ui/v1/events/insolation-patch:
+    post:
+      tags: [Events]
+      summary: Create insolation patch event (change schedule time/duration or disable)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsolationPatchEventCreateRequest'
+      responses:
+        '202':
+          description: Patch event accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InsolationPatchEventCreateResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/commands/watering:
+    post:
+      tags: [Commands]
+      summary: Request manual watering command
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WateringCommandRequest'
+      responses:
+        '202':
+          description: Command accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/ui/v1/commands/insolation:
+    post:
+      tags: [Commands]
+      summary: Request manual insolation command (light on/off)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InsolationCommandRequest'
+      responses:
+        '202':
+          description: Command accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandAcceptedResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+
+  /api/device/v1/watering:
+    get:
+      tags: [Device Runtime]
+      summary: Device polling endpoint for watering actions
+      parameters:
+        - name: device
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Device auth key
+        - name: ttt
+          in: query
+          required: false
+          schema:
+            type: string
+          description: JSON-encoded map of point address to status sent by firmware
+      responses:
+        '200':
+          description: Address-indexed watering commands
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceWateringResponse'
+
+components:
+  parameters:
+    PlantIdPath:
+      name: plantId
+      in: path
+      required: true
+      schema:
+        type: string
+    PointIdPath:
+      name: pointId
+      in: path
+      required: true
+      schema:
+        type: string
+    DeviceIdPath:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        type: string
+    TankIdPath:
+      name: tankId
+      in: path
+      required: true
+      schema:
+        type: string
+    ScheduleIdPath:
+      name: scheduleId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    ErrorResponse:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+
+  schemas:
+    StatusPlant:
+      type: string
+      enum: [dry, optimal, wet, unknown]
+
+    StatusPoint:
+      type: string
+      enum: [ok, error, offline, unknown]
+
+    StatusDevice:
+      type: string
+      enum: [online, stale, offline, unknown]
+
+    StatusTank:
+      type: string
+      enum: [full, medium, low, empty, unknown]
+
+    EventStatus:
+      type: string
+      enum: [success, failed, partial, info]
+
+    ScheduleEventType:
+      type: string
+      enum: [watering, insolation]
+
+    EventType:
+      type: string
+      enum:
+        - device_checkin
+        - humidity_reading
+        - watering_decision
+        - watering
+        - insolation_decision
+        - insolation_state_changed
+        - insolation_patch
+        - command_requested
+        - command_applied
+        - error
+        - tank_refill
+
+    Recurrence:
+      type: string
+      enum: [daily]
+
+    Plant:
+      type: object
+      required:
+        - plantId
+        - name
+        - location
+        - status
+        - targetHumidityMin
+        - targetHumidityMax
+        - insolationEnabled
+        - active
+      properties:
+        plantId:
+          type: string
+        name:
+          type: string
+        species:
+          type: [string, 'null']
+        location:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusPlant'
+        targetHumidityMin:
+          type: number
+        targetHumidityMax:
+          type: number
+        targetWateringDurationSec:
+          type: [integer, 'null']
+          minimum: 1
+        insolationEnabled:
+          type: boolean
+        targetInsolationMinutesPerDay:
+          type: [integer, 'null']
+          minimum: 0
+        lastWateredAt:
+          type: [string, 'null']
+          format: date-time
+        active:
+          type: boolean
+
+    Point:
+      type: object
+      required:
+        - pointId
+        - deviceId
+        - address
+        - index
+        - status
+      properties:
+        pointId:
+          type: string
+        deviceId:
+          type: string
+        address:
+          type: string
+        index:
+          type: integer
+        plantId:
+          type: [string, 'null']
+        status:
+          $ref: '#/components/schemas/StatusPoint'
+        latestHumidity:
+          type: [number, 'null']
+        lastWateredAt:
+          type: [string, 'null']
+          format: date-time
+        defaultWateringDurationSec:
+          type: [integer, 'null']
+          minimum: 1
+
+    Device:
+      type: object
+      required:
+        - deviceId
+        - deviceKey
+        - name
+        - timezone
+        - status
+        - lastOnlineAt
+      properties:
+        deviceId:
+          type: string
+        deviceKey:
+          type: string
+        name:
+          type: string
+        timezone:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusDevice'
+        lastOnlineAt:
+          type: string
+          format: date-time
+        batteryLevel:
+          type: [number, 'null']
+        sleepDurationSec:
+          type: [integer, 'null']
+        checkIntervalSec:
+          type: [integer, 'null']
+        activityCounter:
+          type: [integer, 'null']
+
+    Tank:
+      type: object
+      required:
+        - tankId
+        - zoneId
+        - connectedDeviceIds
+        - capacityMl
+        - currentLevelMl
+        - status
+      properties:
+        tankId:
+          type: string
+        zoneId:
+          type: string
+        connectedDeviceIds:
+          type: array
+          items:
+            type: string
+        capacityMl:
+          type: number
+        currentLevelMl:
+          type: number
+        status:
+          $ref: '#/components/schemas/StatusTank'
+        lastRefilledAt:
+          type: [string, 'null']
+          format: date-time
+        estimatedDaysRemaining:
+          type: [number, 'null']
+
+    Schedule:
+      type: object
+      required:
+        - scheduleId
+        - deviceId
+        - eventType
+        - hour
+        - minute
+        - durationSec
+        - recurrence
+        - enabled
+        - createdAt
+        - updatedAt
+      properties:
+        scheduleId:
+          type: string
+        deviceId:
+          type: string
+        pointId:
+          type: [string, 'null']
+        plantId:
+          type: [string, 'null']
+        eventType:
+          $ref: '#/components/schemas/ScheduleEventType'
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+        durationSec:
+          type: integer
+          minimum: 1
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        activeFrom:
+          type: [string, 'null']
+          format: date
+        activeUntil:
+          type: [string, 'null']
+          format: date
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Event:
+      type: object
+      required:
+        - eventId
+        - eventType
+        - occurredAt
+        - status
+      properties:
+        eventId:
+          type: string
+        eventType:
+          $ref: '#/components/schemas/EventType'
+        occurredAt:
+          type: string
+          format: date-time
+        deviceId:
+          type: [string, 'null']
+        pointId:
+          type: [string, 'null']
+        plantId:
+          type: [string, 'null']
+        amountMl:
+          type: [number, 'null']
+        durationSec:
+          type: [integer, 'null']
+        humidity:
+          type: [number, 'null']
+        status:
+          $ref: '#/components/schemas/EventStatus'
+        payload:
+          type: [object, 'null']
+          additionalProperties: true
+
+    MetaCount:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+
+    MetaCursor:
+      allOf:
+        - $ref: '#/components/schemas/MetaCount'
+        - type: object
+          properties:
+            nextCursor:
+              type: [string, 'null']
+
+    PlantResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Plant'
+
+    PlantListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plant'
+        meta:
+          $ref: '#/components/schemas/MetaCount'
+
+    PointResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Point'
+
+    PointListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Point'
+        meta:
+          $ref: '#/components/schemas/MetaCount'
+
+    DeviceResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Device'
+
+    DeviceListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+        meta:
+          $ref: '#/components/schemas/MetaCount'
+
+    TankResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Tank'
+
+    TankListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tank'
+        meta:
+          $ref: '#/components/schemas/MetaCount'
+
+    ScheduleResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Schedule'
+
+    ScheduleListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
+        meta:
+          $ref: '#/components/schemas/MetaCount'
+
+    EventListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        meta:
+          $ref: '#/components/schemas/MetaCursor'
+
+    CommandAcceptedData:
+      type: object
+      required: [commandId, status, acceptedAt]
+      properties:
+        commandId:
+          type: string
+        status:
+          type: string
+          enum: [accepted]
+        acceptedAt:
+          type: string
+          format: date-time
+
+    CommandAcceptedResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CommandAcceptedData'
+
+    DeviceWateringResponse:
+      type: object
+      additionalProperties:
+        type: number
+      description: Map of point address to watering value.
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+            requestId:
+              type: string
+
+    PlantCreateRequest:
+      type: object
+      required:
+        - name
+        - location
+        - targetHumidityMin
+        - targetHumidityMax
+        - insolationEnabled
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+        location:
+          type: string
+        targetHumidityMin:
+          type: number
+        targetHumidityMax:
+          type: number
+        targetWateringDurationSec:
+          type: integer
+          minimum: 1
+        insolationEnabled:
+          type: boolean
+        targetInsolationMinutesPerDay:
+          type: integer
+          minimum: 0
+
+    PlantUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        species:
+          type: string
+        location:
+          type: string
+        targetHumidityMin:
+          type: number
+        targetHumidityMax:
+          type: number
+        targetWateringDurationSec:
+          type: integer
+          minimum: 1
+        insolationEnabled:
+          type: boolean
+        targetInsolationMinutesPerDay:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+
+    PlantInsolationPolicyPatch:
+      type: object
+      properties:
+        insolationEnabled:
+          type: boolean
+        targetInsolationMinutesPerDay:
+          type: integer
+          minimum: 0
+        maxContinuousInsolationMinutes:
+          type: integer
+          minimum: 1
+
+    PlantWateringPolicyPatch:
+      type: object
+      properties:
+        targetWateringDurationSec:
+          type: integer
+          minimum: 1
+        targetHumidityMin:
+          type: number
+        targetHumidityMax:
+          type: number
+
+    PointPatchRequest:
+      type: object
+      properties:
+        plantId:
+          type: [string, 'null']
+        defaultWateringDurationSec:
+          type: integer
+          minimum: 1
+        status:
+          $ref: '#/components/schemas/StatusPoint'
+
+    DevicePatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        timezone:
+          type: string
+        sleepDurationSec:
+          type: integer
+          minimum: 1
+        checkIntervalSec:
+          type: integer
+          minimum: 1
+
+    TankRefillRequest:
+      type: object
+      required: [addedMl, occurredAt]
+      properties:
+        addedMl:
+          type: number
+          minimum: 0
+        occurredAt:
+          type: string
+          format: date-time
+        note:
+          type: string
+
+    ScheduleCreateRequest:
+      type: object
+      required:
+        - deviceId
+        - eventType
+        - hour
+        - minute
+        - durationSec
+        - recurrence
+        - enabled
+      properties:
+        deviceId:
+          type: string
+        pointId:
+          type: [string, 'null']
+        plantId:
+          type: [string, 'null']
+        eventType:
+          $ref: '#/components/schemas/ScheduleEventType'
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+        durationSec:
+          type: integer
+          minimum: 1
+        recurrence:
+          $ref: '#/components/schemas/Recurrence'
+        activeFrom:
+          type: [string, 'null']
+          format: date
+        activeUntil:
+          type: [string, 'null']
+          format: date
+        enabled:
+          type: boolean
+
+    SchedulePatchRequest:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+        durationSec:
+          type: integer
+          minimum: 1
+        activeFrom:
+          type: [string, 'null']
+          format: date
+        activeUntil:
+          type: [string, 'null']
+          format: date
+        enabled:
+          type: boolean
+
+    WateringCommandRequest:
+      type: object
+      required: [deviceId, pointId, plantId, durationSec, requestedBy, reason]
+      properties:
+        deviceId:
+          type: string
+        pointId:
+          type: string
+        plantId:
+          type: string
+        durationSec:
+          type: integer
+          minimum: 1
+        requestedBy:
+          type: string
+        reason:
+          type: string
+
+    InsolationCommandRequest:
+      type: object
+      required: [deviceId, pointId, plantId, state, requestedBy, reason]
+      properties:
+        deviceId:
+          type: string
+        pointId:
+          type: string
+        plantId:
+          type: string
+        state:
+          type: string
+          enum: [on, off]
+        durationSec:
+          type: [integer, 'null']
+          minimum: 1
+        requestedBy:
+          type: string
+        reason:
+          type: string
+
+    InsolationPatchPayload:
+      type: object
+      properties:
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+        minute:
+          type: integer
+          minimum: 0
+          maximum: 59
+        durationSec:
+          type: integer
+          minimum: 1
+        enabled:
+          type: boolean
+      minProperties: 1
+
+    InsolationPatchEventCreateRequest:
+      type: object
+      required: [scheduleId, plantId, patch, reason, requestedBy]
+      properties:
+        scheduleId:
+          type: string
+        plantId:
+          type: string
+        patch:
+          $ref: '#/components/schemas/InsolationPatchPayload'
+        reason:
+          type: string
+        requestedBy:
+          type: string
+
+    InsolationPatchEventCreateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [eventId, eventType, status, occurredAt]
+          properties:
+            eventId:
+              type: string
+            eventType:
+              type: string
+              enum: [insolation_patch]
+            status:
+              type: string
+              enum: [accepted]
+            occurredAt:
+              type: string
+              format: date-time

@@ -1,0 +1,30 @@
+/**
+ * controller 01 config file
+ * 
+ * the on that on Ilushuas Room
+ */
+ 
+#define WIFI_PASSWORD "secret"
+#define WIFI_NAME "networkname"
+#define SERVER_ADDRESS "http://dropstation.ztools.org/api/v2/watering/?device=sometoken"
+#define PUMP_PIN 12
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+
+// if we want working offline
+#define WORK_OFFLINE true
+
+#define PUMP_PIN 12
+#define POWER_PIN 13
+#define HUMIDITY_PIN 14
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+#define SLEEP_TIMEOUT 50e6
+
+#define HUMIDITY_K -1.1628
+#define HUMIDITY_V0 147.674
+
+#define VOLTAGE_K 3.8462
+#define VOLTAGE_V0 -1192.3077
