@@ -4,9 +4,9 @@ $fn = 100;
 
 body_thickness = 2;
 
-box_length = 104;
+box_length = 104-15;
 box_width = 29;
-box_height = 44;
+box_height = 40;
 sensor_thickness = 1.5;
 sensor_width = 22;
 
@@ -16,7 +16,7 @@ cut_position = 20;
 fitting_gap = 0.3;
 horisontal_gap = 8;
 
-sensor_offset_1 = 25;
+sensor_offset_1 = 27;
 sensor_offset_2 = 15;
 
 tube_radius = 2;
@@ -80,6 +80,9 @@ module bottom_outer_part() {
           cube([box_length*2, box_length*2, box_length*2], center=true);
         }
     }
+    
+        translate([-box_length/2+2, 0, box_height/2 - (box_height/2)*(sensor_offset_1 / sensor_offset_2)/2])
+        cube([2, sensor_width+2, sensor_thickness+3], center=true);
 }
 
 
@@ -97,6 +100,8 @@ module bottom_part() {
     }
     }
   
+    
+
 
 
 
@@ -106,8 +111,8 @@ module bottom_part() {
 
 
 
-//bottom_part();
+bottom_part();
 
-translate([50, 0, 0]) {
-  upper_part();  
-}
+//translate([50, 0, 0]) {
+//  upper_part();  
+//}
