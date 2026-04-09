@@ -2,7 +2,7 @@ name: Deploy nuxt-crud-app to GitHub Pages
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["master"]
     paths:
       - "nuxt-crud-app/**"
       - ".github/workflows/deploy-nuxt-pages.yml"
