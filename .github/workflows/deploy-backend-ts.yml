@@ -67,5 +67,5 @@ jobs:
           set -e
           cd "${DEPLOY_PATH}"
           docker load -i ${IMAGE_NAME}_${IMAGE_TAG}.tar.gz
-          docker compose -f deploy/docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d
           EOF
