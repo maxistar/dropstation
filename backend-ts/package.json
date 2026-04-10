@@ -16,6 +16,7 @@
     "hash:password": "node ../scripts/hash-password.mjs"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "mysql2": "^3.14.5"

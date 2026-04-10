@@ -1,3 +1,4 @@
+import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { AppConfig } from "../config/load-config.js";
 import type { DatabaseContext } from "../db/index.js";
@@ -14,19 +15,10 @@ export function buildServer(
     },
   });
 
-  app.addHook("onRequest", async (request, reply) => {
-    const requestOrigin = request.headers.origin;
-
-    if (requestOrigin && config.corsOrigins.includes(requestOrigin)) {
-      reply.header("Access-Control-Allow-Origin", requestOrigin);
-      reply.header("Vary", "Origin");
-      reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-      reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    }
-
-    if (request.method === "OPTIONS") {
-      reply.code(204).send();
-    }
+  app.register(cors, {
+    origin: config.corsOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   });
 
   app.get("/", async () => {
