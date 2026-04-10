@@ -2,7 +2,7 @@ name: Deploy nuxt-crud-app to GitHub Pages
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["master"]
     paths:
       - "nuxt-crud-app/**"
       - ".github/workflows/deploy-nuxt-pages.yml"
@@ -43,8 +43,6 @@ jobs:
 
       - name: Generate static site
         run: yarn generate
-        env:
-          NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
