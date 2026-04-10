@@ -14,5 +14,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-gotechnies}
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-change-me-in-production}
       AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-28800}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:3003:3001"
