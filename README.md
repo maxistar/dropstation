@@ -1,5 +1,7 @@
 # Dropstation
 
+[![PlatformIO CI (Arduino/simplepod)](https://github.com/maxistar/dropstation/actions/workflows/platformio-simplepod.yml/badge.svg?branch=dev)](https://github.com/maxistar/dropstation/actions/workflows/platformio-simplepod.yml)
+
 Automatic watering of indoor plants.
 
 How to install
