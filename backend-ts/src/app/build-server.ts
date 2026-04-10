@@ -1,5 +1,6 @@
 import cors from "@fastify/cors";
 import Fastify, { type FastifyInstance } from "fastify";
+import pkg from "../../package.json" with { type: "json" };
 import type { AppConfig } from "../config/load-config.js";
 import type { DatabaseContext } from "../db/index.js";
 import { registerRuntimeRoutes } from "../routes/runtime/register-runtime-routes.js";
@@ -24,6 +25,7 @@ export function buildServer(
   app.get("/", async () => {
     return {
       service: "dropstation-backend-ts",
+      version: pkg.version,
       environment: config.nodeEnv,
       status: "ok",
     };
