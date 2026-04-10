@@ -16,4 +16,4 @@ services:
       AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-change-me-in-production}
       AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-28800}
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:3003:3001"
