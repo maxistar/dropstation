@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env: [esp32dev, esp8266]
+        env: [esp8266]
 
     defaults:
       run:
@@ -34,6 +34,9 @@ jobs:
 
       - name: Install PlatformIO
         run: pip install --upgrade platformio
+
+      - name: Prepare local config
+        run: cp include/config.h.example include/config.h
 
       - name: Build ${{ matrix.env }}
         run: pio run -e ${{ matrix.env }}

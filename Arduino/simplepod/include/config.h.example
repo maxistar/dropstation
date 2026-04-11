@@ -1,0 +1,36 @@
+/**
+ * Local firmware configuration example.
+ *
+ * Copy this file to config.h and replace the placeholder values
+ * with your local Wi-Fi, backend, and calibration settings.
+ */
+
+#define WIFI_PASSWORD "secret"
+#define WIFI_NAME "networkname"
+#define SERVER_ADDRESS "http://dropstation.example/api/v2/watering/?device=sometoken"
+
+// If true, the device performs an offline watering cycle instead of POSTing to the server.
+#define WORK_OFFLINE true
+
+#define PUMP_PIN 12
+#define POWER_PIN 13
+#define HUMIDITY_PIN 14
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+
+#define POWER_SENSOR_ON LOW
+#define POWER_SENSOR_OFF HIGH
+
+#define HUMIDITY_SENSOR_ON LOW
+#define HUMIDITY_SENSOR_OFF HIGH
+
+// Microseconds spent in deep sleep between wake cycles.
+#define SLEEP_TIMEOUT 3600e6
+
+// Sensor calibration constants. Replace with values from your device calibration.
+#define HUMIDITY_K -1.1628
+#define HUMIDITY_V0 147.674
+
+#define VOLTAGE_K 3.8462
+#define VOLTAGE_V0 -1192.3077
