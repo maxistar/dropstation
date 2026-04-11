@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { RuntimeService } from "../../modules/runtime/runtime-service.js";
+import type { DeviceTelemetryPayload } from "../../modules/runtime/runtime-types.js";
 import type { DatabaseContext } from "../../db/index.js";
 
 interface RuntimeWateringQuerystring {
@@ -52,6 +53,42 @@ export function registerRuntimeRoutes(
         return {
           error: "Runtime watering request failed",
         };
+      }
+    },
+  );
+
+  app.post<{ Body: DeviceTelemetryPayload }>(
+    "/api/device/v1/telemetry",
+    {
+      schema: {
+        body: {
+          type: "object",
+          required: ["deviceKey", "humidity", "battery", "watered", "wateringDurationSec", "timestampUtc"],
+          properties: {
+            deviceKey: { type: "string", minLength: 1 },
+            humidity: { type: "number" },
+            battery: { type: "number" },
+            watered: { type: "boolean" },
+            wateringDurationSec: { type: "number" },
+            timestampUtc: { type: "string" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      try {
+        await runtimeService.handleTelemetry(request.body);
+        reply.code(204);
+      } catch (error) {
+        request.log.error(error);
+
+        if (error instanceof Error && error.message === "Device not found") {
+          reply.code(404);
+          return { error: "Device not found" };
+        }
+
+        reply.code(500);
+        return { error: "Telemetry submission failed" };
       }
     },
   );

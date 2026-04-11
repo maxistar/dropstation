@@ -10,6 +10,12 @@
 #define REMOTE_CONFIG_URL "https://maxistar.ru/kitchen/water.json"
 #define REMOTE_CONFIG_TLS_INSECURE 1
 
+// Unique key for this device. Used to identify telemetry reports on the backend.
+#define DEVICE_KEY "rose-desk"
+
+// Optional: POST telemetry after each wake cycle. Remove or leave empty to disable.
+#define TELEMETRY_URL "https://your-backend.example.com/api/device/v1/telemetry"
+
 // Default remote-schedule path is enabled. Legacy paths remain in source but disabled.
 #define WORK_OFFLINE 0
 #define LEGACY_SERVER_POST_ENABLED 0

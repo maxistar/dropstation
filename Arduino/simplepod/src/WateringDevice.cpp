@@ -42,6 +42,14 @@ Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
     ESP.restart();
 });
 
+struct TelemetryPayload
+{
+    bool ready = false;
+    bool watered = false;
+    uint16_t wateringDurationSec = 0;
+    String timestampUtc;
+};
+
 struct RemoteScheduleConfig
 {
     bool enabled = false;
@@ -234,6 +242,49 @@ bool fetchRemoteSchedule(RemoteScheduleConfig &config, ParsedHttpDate &dateHeade
     return parsed;
 }
 
+void postTelemetry(const TelemetryPayload &telemetry)
+{
+#ifdef TELEMETRY_URL
+    if (!telemetry.ready)
+    {
+        LOGF("TELEMETRY", "payload not ready, skipping");
+        return;
+    }
+
+    HTTPClient http;
+    std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+    client->setInsecure();
+
+    if (!http.begin(*client, TELEMETRY_URL))
+    {
+        LOGF("TELEMETRY", "begin failed");
+        return;
+    }
+
+    http.addHeader("Content-Type", "application/json");
+
+    StaticJsonBuffer<512> jsonBuffer;
+    JsonObject &root = jsonBuffer.createObject();
+    root["deviceKey"] = DEVICE_KEY;
+    root["humidity"] = deviceState.humidityValue;
+    root["battery"] = deviceState.powerValue;
+    root["watered"] = telemetry.watered;
+    root["wateringDurationSec"] = static_cast<int>(telemetry.wateringDurationSec);
+    root["timestampUtc"] = telemetry.timestampUtc;
+
+    String body;
+    root.printTo(body);
+
+    LOGF("TELEMETRY", "posting to %s payload=%s", TELEMETRY_URL, body.c_str());
+    int httpCode = http.POST(body);
+    LOGF("TELEMETRY", "status=%d", httpCode);
+    http.end();
+#else
+    (void)telemetry;
+    LOGF("TELEMETRY", "disabled (TELEMETRY_URL not defined)");
+#endif
+}
+
 #if WORK_OFFLINE
 void runLegacyOfflineCycle()
 {
@@ -250,8 +301,10 @@ void runLegacyServerControlledCycle()
 }
 #endif
 
-void runRemoteScheduleCycle()
+TelemetryPayload runRemoteScheduleCycle()
 {
+    TelemetryPayload telemetry;
+
     readDeviceState();
     applySleepIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
 
@@ -260,21 +313,29 @@ void runRemoteScheduleCycle()
     if (!fetchRemoteSchedule(config, dateHeader))
     {
         LOGF("SLEEP", "using fallback wakeupIntervalSec=%u", DEFAULT_WAKEUP_INTERVAL_SEC);
-        return;
+        return telemetry;
     }
+
+    // Build UTC timestamp string from parsed header for telemetry.
+    char tsBuf[32] = {0};
+    snprintf(tsBuf, sizeof(tsBuf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+             dateHeader.year, dateHeader.month, dateHeader.day,
+             dateHeader.hour, dateHeader.minute, dateHeader.second);
+    telemetry.timestampUtc = String(tsBuf);
+    telemetry.ready = true;
 
     applySleepIntervalSec(config.wakeupIntervalSec);
     if (!config.enabled)
     {
         LOGF("SCHEDULE", "disabled by remote config");
-        return;
+        return telemetry;
     }
 
     uint32_t currentLocalSecondOfDay = 0;
     if (!localSecondOfDay(&dateHeader, config.timezoneOffsetSec, &currentLocalSecondOfDay))
     {
         LOGF("TIME", "failed to compute local second-of-day");
-        return;
+        return telemetry;
     }
 
     LOGF("TIME", "localSecondOfDay=%lu", static_cast<unsigned long>(currentLocalSecondOfDay));
@@ -291,11 +352,15 @@ void runRemoteScheduleCycle()
     {
         LOGF("SCHEDULE", "due slotIndex=%d", decision.matchedSlotIndex);
         performWatering(decision.durationSec);
+        telemetry.watered = true;
+        telemetry.wateringDurationSec = decision.durationSec;
     }
     else
     {
         LOGF("SCHEDULE", "no slot due in current wake window");
     }
+
+    return telemetry;
 }
 } // namespace
 
@@ -337,10 +402,15 @@ void WateringDevice::setup()
 
 #if WORK_OFFLINE
     runLegacyOfflineCycle();
+    postTelemetry(TelemetryPayload{});
 #elif LEGACY_SERVER_POST_ENABLED
     runLegacyServerControlledCycle();
+    postTelemetry(TelemetryPayload{});
 #else
-    runRemoteScheduleCycle();
+    {
+        TelemetryPayload telemetry = runRemoteScheduleCycle();
+        postTelemetry(telemetry);
+    }
 #endif
 
     doubleResetGuard.disarm();
