@@ -2,15 +2,20 @@
  * Local firmware configuration example.
  *
  * Copy this file to config.h and replace the placeholder values
- * with your local Wi-Fi, backend, and calibration settings.
+ * with your local Wi-Fi, schedule endpoint, and calibration settings.
  */
 
 #define WIFI_PASSWORD "secret"
 #define WIFI_NAME "networkname"
-#define SERVER_ADDRESS "http://dropstation.example/api/v2/watering/?device=sometoken"
+#define REMOTE_CONFIG_URL "https://maxistar.ru/kitchen/water.json"
+#define REMOTE_CONFIG_TLS_INSECURE 1
 
-// If true, the device performs an offline watering cycle instead of POSTing to the server.
-#define WORK_OFFLINE true
+// Default remote-schedule path is enabled. Legacy paths remain in source but disabled.
+#define WORK_OFFLINE 0
+#define LEGACY_SERVER_POST_ENABLED 0
+#define DEFAULT_WAKEUP_INTERVAL_SEC 3600
+#define MANUAL_WATERING_DURATION_SEC 10
+#define WEB_SERVER_AWAKE_MS 60000
 
 #define PUMP_PIN 12
 #define POWER_PIN 13
@@ -25,7 +30,7 @@
 #define HUMIDITY_SENSOR_ON LOW
 #define HUMIDITY_SENSOR_OFF HIGH
 
-// Microseconds spent in deep sleep between wake cycles.
+// Fallback deep sleep duration in microseconds when remote config is unavailable.
 #define SLEEP_TIMEOUT 3600e6
 
 // Sensor calibration constants. Replace with values from your device calibration.
