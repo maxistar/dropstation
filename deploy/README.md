@@ -31,3 +31,14 @@ Required repository secrets:
 - `DEPLOY_SSH_KEY` — private SSH key for deploy user
 - `DEPLOY_PORT` (optional, default `22`)
 - `DEPLOY_PATH` (optional, default `/opt/dropstation`)
+
+
+## MySQl setup
+
+Firewall allow
+
+docker network inspect watering_default "Gateway": "172.21.0.1"
+sudo ufw allow from 172.21.0.1/16 to any port 3306 proto tcp
+
+ - `CREATE USER 'polivalkauser'@'%' IDENTIFIED BY 'df&%dgfseere54534LdfdfdF';`
+ - `grant all privileges on dropstation.* to 'polivalkauser'@'%';`

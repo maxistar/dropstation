@@ -1,0 +1,47 @@
+/**
+ * Local firmware configuration example.
+ *
+ * Copy this file to config.h and replace the placeholder values
+ * with your local Wi-Fi, schedule endpoint, and calibration settings.
+ */
+
+#define WIFI_PASSWORD "secret"
+#define WIFI_NAME "networkname"
+#define REMOTE_CONFIG_URL "https://maxistar.ru/kitchen/water.json"
+#define REMOTE_CONFIG_TLS_INSECURE 1
+
+// Unique key for this device. Used to identify telemetry reports on the backend.
+#define DEVICE_KEY "rose-desk"
+
+// Optional: POST telemetry after each wake cycle. Remove or leave empty to disable.
+#define TELEMETRY_URL "https://your-backend.example.com/api/device/v1/telemetry"
+
+// Default remote-schedule path is enabled. Legacy paths remain in source but disabled.
+#define WORK_OFFLINE 0
+#define LEGACY_SERVER_POST_ENABLED 0
+#define DEFAULT_WAKEUP_INTERVAL_SEC 3600
+#define MANUAL_WATERING_DURATION_SEC 10
+#define WEB_SERVER_AWAKE_MS 60000
+
+#define PUMP_PIN 12
+#define POWER_PIN 13
+#define HUMIDITY_PIN 14
+
+#define PUMP_ON HIGH
+#define PUMP_OFF LOW
+
+#define POWER_SENSOR_ON LOW
+#define POWER_SENSOR_OFF HIGH
+
+#define HUMIDITY_SENSOR_ON LOW
+#define HUMIDITY_SENSOR_OFF HIGH
+
+// Fallback deep sleep duration in microseconds when remote config is unavailable.
+#define SLEEP_TIMEOUT 3600e6
+
+// Sensor calibration constants. Replace with values from your device calibration.
+#define HUMIDITY_K -1.1628
+#define HUMIDITY_V0 147.674
+
+#define VOLTAGE_K 3.8462
+#define VOLTAGE_V0 -1192.3077

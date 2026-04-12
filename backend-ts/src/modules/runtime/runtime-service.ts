@@ -6,6 +6,7 @@ import {
 } from "./runtime-repositories.js";
 import type {
   CanonicalEventRecord,
+  DeviceTelemetryPayload,
   RuntimeDeviceRecord,
   RuntimePointRecord,
   RuntimeScheduleRecord,
@@ -133,6 +134,107 @@ export class RuntimeService {
       }
 
       return response;
+    });
+  }
+
+  public async handleTelemetry(payload: DeviceTelemetryPayload): Promise<void> {
+    const device = await this.repositories.findDeviceByKey(payload.deviceKey);
+    if (!device) {
+      throw new Error("Device not found");
+    }
+
+    await this.database.withTransaction(async (connection) => {
+      // Update device battery.
+      await connection.execute<ResultSetHeader>(
+        "UPDATE devices SET last_access = NOW(), battery = ? WHERE id = ?",
+        [payload.battery, device.id],
+      );
+
+      // Write device_checkin event.
+      await connection.execute<ResultSetHeader>(
+        `
+          INSERT INTO events_canonical (
+            external_id, legacy_event_id, event_type, occurred_at,
+            device_id, point_id, plant_id, amount_ml, duration_sec, humidity, status, payload
+          ) VALUES (
+            ?, NULL, 'device_checkin', NOW(),
+            ?, NULL, NULL, NULL, NULL, NULL, 'info',
+            JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?, 'firmwareVersion', ?)
+          )
+        `,
+        [
+          `ev_telemetry_checkin_${device.id}_${Date.now()}`,
+          device.id,
+          payload.timestampUtc,
+          payload.firmwareVersion ?? null,
+        ],
+      );
+
+      // Write humidity_reading event and update point humidity.
+      const points = await this.repositories.listPointsByDeviceId(device.id);
+      const firstPoint = points[0] ?? null;
+
+      if (firstPoint) {
+        await connection.execute<ResultSetHeader>(
+          "UPDATE points SET humidity = ? WHERE id = ?",
+          [payload.humidity, firstPoint.id],
+        );
+
+        await connection.execute<ResultSetHeader>(
+          `
+            INSERT INTO events_canonical (
+              external_id, legacy_event_id, event_type, occurred_at,
+              device_id, point_id, plant_id, amount_ml, duration_sec, humidity, status, payload
+            ) VALUES (
+              ?, NULL, 'humidity_reading', NOW(),
+              ?, ?, ?, NULL, NULL, ?, 'info',
+              JSON_OBJECT('source', 'telemetry')
+            )
+          `,
+          [
+            `ev_telemetry_humidity_${device.id}_${Date.now()}`,
+            device.id,
+            firstPoint.id,
+            firstPoint.plantId,
+            payload.humidity,
+          ],
+        );
+      }
+
+      // Write watering event if device reported a watering.
+      if (payload.watered && payload.wateringDurationSec > 0) {
+        const point = firstPoint;
+
+        await connection.execute<ResultSetHeader>(
+          `
+            INSERT INTO events_canonical (
+              external_id, legacy_event_id, event_type, occurred_at,
+              device_id, point_id, plant_id, amount_ml, duration_sec, humidity, status, payload
+            ) VALUES (
+              ?, NULL, 'watering', NOW(),
+              ?, ?, ?, ?, ?, ?, 'success',
+              JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?)
+            )
+          `,
+          [
+            `ev_telemetry_watering_${device.id}_${Date.now()}`,
+            device.id,
+            point?.id ?? null,
+            point?.plantId ?? null,
+            payload.wateringDurationSec,
+            payload.wateringDurationSec,
+            payload.humidity,
+            payload.timestampUtc,
+          ],
+        );
+
+        if (point) {
+          await connection.execute<ResultSetHeader>(
+            "UPDATE points SET last_watering = NOW() WHERE id = ?",
+            [point.id],
+          );
+        }
+      }
     });
   }
 

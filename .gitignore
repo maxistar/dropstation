@@ -8,4 +8,4 @@ Arduino/simplepod/controller01.h
 node_modules
 Arduino/simplepod/config.dist.h
 Arduino/simplepod/config.dist.h.*
-openscad/.3mf
+openscad/*.3mf

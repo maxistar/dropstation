@@ -1,6 +1,6 @@
 {
   "name": "dropstation-backend-ts",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "private": true,
   "description": "Standalone TypeScript backend for Dropstation",
   "type": "module",
@@ -13,9 +13,11 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "hash:password": "node ../scripts/hash-password.mjs"
+    "hash:password": "node ../scripts/hash-password.mjs",
+    "twin": "tsx src/digital-twin/run.ts"
   },
   "dependencies": {
+    "@fastify/cors": "^11.2.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "mysql2": "^3.14.5"

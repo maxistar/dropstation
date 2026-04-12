@@ -1,98 +1,108 @@
 #include "WateringDevice.h"
+
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
-#include <WiFiClient.h>
-#include <ArduinoJson.h>
-
+#include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
-#include <StreamString.h>
-
-#include <NTPClient.h>
+#include <WiFiClient.h>
+#include <WiFiClientSecureBearSSL.h>
+#include <ArduinoJson.h>
+#include <memory>
 
 #include "config.h"
-
-#include "WebServer.h"
-#include "Timer.h"
-
 #include "DeviceState.h"
-
 #include "DoubleResetGuard.h"
+#include "ScheduleLogic.h"
+#include "Timer.h"
+#include "WebServer.h"
 
-// struct {
-//     char mySSID[MAX_STRING_LENGTH] = "";
-//     char myPW[MAX_STRING_LENGTH] = "";
-// } settings;
+namespace
+{
+const uint32_t kSecondsPerDay = 86400UL;
+const size_t kMaxWateringSlots = 8;
+const size_t kDateHeaderCount = 1;
+const char *kCollectedHeaders[kDateHeaderCount] = {"Date"};
+const size_t kJsonBufferSize = 1024;
 
 WebServer webServer;
-
-uint64_t interval = SLEEP_TIMEOUT;
-#define USE_SERIAL Serial
-
-DoubleResetGuard drg(10000); // таймаут 10 секунд
-
-Timer sleepingTimer(60000, []()
-    {
-      drg.disarm();
-      delay(1000);
-      USE_SERIAL.printf("sleep for: %llu\n", interval);
-      ESP.deepSleep(interval);
-      ESP.restart(); 
-    }
-);
-
-#define JSON_BUFFER_SIZE 500
-
 DeviceState deviceState = {0, 0};
-int t = 0;
-long int jsonInterval = 0;
-bool watering = false;
+DoubleResetGuard doubleResetGuard(10000);
+bool manualWateringRequested = false;
+bool webServerEnabled = false;
+uint64_t sleepIntervalMicros = SLEEP_TIMEOUT;
 
-const long utcOffsetInSeconds = 7200;
+#define USE_SERIAL Serial
+#define LOGF(tag, fmt, ...) USE_SERIAL.printf("[" tag "] " fmt "\n", ##__VA_ARGS__)
 
-char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-// Define NTP Client to get time
-WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "pool.ntp.org", utcOffsetInSeconds);
+Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
+    doubleResetGuard.disarm();
+    delay(1000);
+    LOGF("SLEEP", "intervalMicros=%llu", sleepIntervalMicros);
+    ESP.deepSleep(sleepIntervalMicros);
+    ESP.restart();
+});
+
+struct TelemetryPayload
+{
+    bool ready = false;
+    bool watered = false;
+    uint16_t wateringDurationSec = 0;
+    String timestampUtc;
+};
+
+struct RemoteScheduleConfig
+{
+    bool enabled = false;
+    int32_t timezoneOffsetSec = 0;
+    uint32_t wakeupIntervalSec = DEFAULT_WAKEUP_INTERVAL_SEC;
+    uint16_t wateringDurationSec = 0;
+    uint32_t wateringTimes[kMaxWateringSlots] = {0};
+    size_t wateringTimesCount = 0;
+};
+
+void applySleepIntervalSec(uint32_t intervalSec)
+{
+    uint32_t safeIntervalSec = intervalSec == 0 ? DEFAULT_WAKEUP_INTERVAL_SEC : intervalSec;
+    sleepIntervalMicros = static_cast<uint64_t>(safeIntervalSec) * 1000000ULL;
+}
 
 int normaliseHumidityValue(int rawData)
 {
     double value = rawData;
     value = value * HUMIDITY_K + HUMIDITY_V0;
-    return (int)value;
+    return static_cast<int>(value);
 }
 
-int normaliseVoltageValue(int rawData)
+void performWatering(uint16_t durationSec)
 {
-    double value = rawData;
-    value = value * VOLTAGE_K + VOLTAGE_V0;
-    return (int)value;
+    if (durationSec == 0)
+    {
+        LOGF("WATER", "skipped because duration=0");
+        return;
+    }
+
+    LOGF("WATER", "start durationSec=%u", durationSec);
+    digitalWrite(PUMP_PIN, PUMP_ON);
+    delay(1000UL * durationSec);
+    digitalWrite(PUMP_PIN, PUMP_OFF);
+    LOGF("WATER", "done");
 }
 
-void wifiSetup()
+void readDeviceState()
 {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
-    Serial.println("");
-    // Wait for connection
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        delay(500);
-        Serial.print(".");
-    }
-    Serial.println("");
-    Serial.print("Connected to ");
-    Serial.println(WIFI_NAME);
-    Serial.print("IP address: ");
-    Serial.println(WiFi.localIP());
-    // WiFi.mode(WIFI_ON);
+    digitalWrite(PUMP_PIN, PUMP_OFF);
 
-    if (MDNS.begin("esp8266"))
-    {
-        Serial.println("MDNS responder started");
-    }
+    digitalWrite(POWER_PIN, POWER_SENSOR_ON);
+    delay(1000);
+    deviceState.powerValue = analogRead(A0);
+    digitalWrite(POWER_PIN, POWER_SENSOR_OFF);
 
-    timeClient.begin();
+    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_ON);
+    delay(1000);
+    deviceState.humidityValue = normaliseHumidityValue(analogRead(A0));
+    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
+
+    LOGF("STATE", "batteryRaw=%d soilMoisture=%d", deviceState.powerValue, deviceState.humidityValue);
 }
 
 void wateringSetup()
@@ -100,192 +110,335 @@ void wateringSetup()
     pinMode(PUMP_PIN, OUTPUT);
     pinMode(POWER_PIN, OUTPUT);
     pinMode(HUMIDITY_PIN, OUTPUT);
-    digitalWrite(PUMP_PIN, PUMP_OFF); // turn the LED on (HIGH is the voltage level)
+    digitalWrite(PUMP_PIN, PUMP_OFF);
     digitalWrite(POWER_PIN, POWER_SENSOR_OFF);
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 }
 
-void wateringLoop()
+void wifiSetup()
 {
-
-    digitalWrite(PUMP_PIN, PUMP_OFF);
-
-    USE_SERIAL.print("read power");
-    digitalWrite(POWER_PIN, POWER_SENSOR_ON);
-    delay(1000);
-    deviceState.powerValue = analogRead(A0);
-    int powerValuePercent = normaliseVoltageValue(deviceState.powerValue);
-    digitalWrite(POWER_PIN, POWER_SENSOR_OFF);
-
-    USE_SERIAL.print("read humidity");
-    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_ON);
-    delay(1000);
-    deviceState.humidityValue = normaliseHumidityValue(analogRead(A0));
-    digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
-
-    String postString = String(
-                            "{\"nextCall\":") +
-                        String((int)(SLEEP_TIMEOUT / 1000000)) +
-                        String(", \"battery\": ") + String(deviceState.powerValue) +
-                        String(", \"batteryNorm\": ") + String(powerValuePercent) +
-                        String(", \"humidity\": ") + String(deviceState.humidityValue) +
-                        String("}");
-
-    if (WORK_OFFLINE)
+    LOGF("BOOT", "starting device");
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
+    LOGF("WIFI", "connecting to %s", WIFI_NAME);
+    while (WiFi.status() != WL_CONNECTED)
     {
-        t = 10;
-        USE_SERIAL.printf("watering for %d seconds\n", t);
-        digitalWrite(PUMP_PIN, PUMP_ON);
-        Serial.print("pump stared\n");
-        delay(1000 * t);
-        digitalWrite(PUMP_PIN, PUMP_OFF);
-        Serial.print("pump stopped\n");
-        Serial.print(postString);
+        delay(500);
+        USE_SERIAL.print(".");
+    }
+    USE_SERIAL.println();
+    LOGF("WIFI", "connected ip=%s", WiFi.localIP().toString().c_str());
+}
 
+bool parseWateringTimes(JsonArray &times, RemoteScheduleConfig &config)
+{
+    config.wateringTimesCount = 0;
+
+    for (JsonArray::iterator it = times.begin(); it != times.end() && config.wateringTimesCount < kMaxWateringSlots; ++it)
+    {
+        const char *timeText = it->as<const char *>();
+        if (timeText == NULL)
+        {
+            continue;
+        }
+
+        uint32_t slotSecondOfDay = 0;
+        if (parseTimeOfDay(timeText, &slotSecondOfDay))
+        {
+            config.wateringTimes[config.wateringTimesCount] = slotSecondOfDay;
+            LOGF("CONFIG", "slot[%u]=%s", static_cast<unsigned>(config.wateringTimesCount), timeText);
+            config.wateringTimesCount += 1;
+        }
+        else
+        {
+            LOGF("CONFIG", "ignored invalid slot=%s", timeText);
+        }
+    }
+
+    return config.wateringTimesCount > 0;
+}
+
+bool parseRemoteConfigJson(const String &payload, RemoteScheduleConfig &config)
+{
+    StaticJsonBuffer<kJsonBufferSize> jsonBuffer;
+    JsonObject &root = jsonBuffer.parseObject(payload);
+    if (!root.success())
+    {
+        LOGF("CONFIG", "json parse failed");
+        return false;
+    }
+
+    config.enabled = root.containsKey("enabled") ? root["enabled"].as<bool>() : false;
+    config.timezoneOffsetSec = root.containsKey("timezoneOffsetSec") ? root["timezoneOffsetSec"].as<long>() : 0;
+    config.wakeupIntervalSec = root.containsKey("wakeupIntervalSec") ? root["wakeupIntervalSec"].as<unsigned long>() : DEFAULT_WAKEUP_INTERVAL_SEC;
+    config.wateringDurationSec = root.containsKey("wateringDurationSec") ? root["wateringDurationSec"].as<unsigned int>() : 0;
+
+    if (!root.containsKey("wateringTimes"))
+    {
+        LOGF("CONFIG", "wateringTimes missing");
+        return false;
+    }
+
+    JsonArray &times = root["wateringTimes"].as<JsonArray &>();
+    if (!parseWateringTimes(times, config))
+    {
+        LOGF("CONFIG", "no valid watering times");
+        return false;
+    }
+
+    LOGF(
+        "CONFIG",
+        "enabled=%s timezoneOffsetSec=%ld wakeupIntervalSec=%lu wateringDurationSec=%u slots=%u",
+        config.enabled ? "true" : "false",
+        static_cast<long>(config.timezoneOffsetSec),
+        static_cast<unsigned long>(config.wakeupIntervalSec),
+        config.wateringDurationSec,
+        static_cast<unsigned>(config.wateringTimesCount));
+
+    return true;
+}
+
+bool fetchRemoteSchedule(RemoteScheduleConfig &config, ParsedHttpDate &dateHeader)
+{
+    HTTPClient http;
+    std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+    client->setInsecure();
+    http.collectHeaders(kCollectedHeaders, kDateHeaderCount);
+
+    LOGF("HTTP", "requesting %s", REMOTE_CONFIG_URL);
+    if (!http.begin(*client, REMOTE_CONFIG_URL))
+    {
+        LOGF("HTTP", "begin failed");
+        return false;
+    }
+
+    int httpCode = http.GET();
+    if (httpCode <= 0)
+    {
+        LOGF("HTTP", "request failed error=%s", http.errorToString(httpCode).c_str());
+        http.end();
+        return false;
+    }
+
+    LOGF("HTTP", "status=%d", httpCode);
+    if (httpCode != HTTP_CODE_OK)
+    {
+        http.end();
+        return false;
+    }
+
+    String dateHeaderText = http.header("Date");
+    LOGF("TIME", "dateHeader=%s", dateHeaderText.c_str());
+    if (!parseHttpDateHeader(dateHeaderText.c_str(), &dateHeader))
+    {
+        LOGF("TIME", "failed to parse Date header");
+        http.end();
+        return false;
+    }
+
+    String payload = http.getString();
+    bool parsed = parseRemoteConfigJson(payload, config);
+    http.end();
+    return parsed;
+}
+
+void postTelemetry(const TelemetryPayload &telemetry)
+{
+#ifdef TELEMETRY_URL
+    if (!telemetry.ready)
+    {
+        LOGF("TELEMETRY", "payload not ready, skipping");
         return;
     }
 
-    // send state to server
-    StaticJsonBuffer<JSON_BUFFER_SIZE> jsonBuffer;
-
-    USE_SERIAL.printf("loop");
-
     HTTPClient http;
-    WiFiClient client;
+    std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
+    client->setInsecure();
 
-    USE_SERIAL.print("[HTTP] begin...\n");
-    // configure traged server and url
-    // http.begin("https://192.168.1.12/test.html", "7a 9c f4 db 40 d3 62 5a 6e 21 bc 5c cc 66 c8 3e a1 45 59 38"); //HTTPS
-    http.begin(client, SERVER_ADDRESS); // HTTP
-
-    USE_SERIAL.print("[HTTP] GET...\n");
-    http.addHeader("Content-Type", "application/json");
-    // start connection and send HTTP header
-    // int httpCode = http.GET();
-    int httpCode = http.POST(postString);
-
-    // httpCode will be negative on error
-    if (httpCode > 0)
+    if (!http.begin(*client, TELEMETRY_URL))
     {
-        // HTTP header has been send and Server response header has been handled
-        USE_SERIAL.printf("[HTTP] GET... code: %d\n", httpCode);
+        LOGF("TELEMETRY", "begin failed");
+        return;
+    }
 
-        // file found at server
-        if (httpCode == HTTP_CODE_OK)
-        {
-            String payload = http.getString();
-            USE_SERIAL.println(payload);
+    http.addHeader("Content-Type", "application/json");
 
-            JsonObject &root = jsonBuffer.parseObject(payload);
+    StaticJsonBuffer<512> jsonBuffer;
+    JsonObject &root = jsonBuffer.createObject();
+    root["deviceKey"] = DEVICE_KEY;
+    root["humidity"] = deviceState.humidityValue;
+    root["battery"] = deviceState.powerValue;
+    root["watered"] = telemetry.watered;
+    root["wateringDurationSec"] = static_cast<int>(telemetry.wateringDurationSec);
+    root["timestampUtc"] = telemetry.timestampUtc;
+#ifdef FIRMWARE_VERSION
+    root["firmwareVersion"] = FIRMWARE_VERSION;
+#endif
 
-            if (root.success())
-            {
-                Serial.println("parseObject() succeed");
-                root.printTo(Serial);
-                Serial.println("size:");
-                Serial.println(root.size());
+    String body;
+    root.printTo(body);
 
-                t = root["watering"];
-                jsonInterval = root["interval"];
-                interval = jsonInterval;
-                interval = interval * 1000000;
-            }
-            else
-            {
-                Serial.println("parseObject() failed");
-            }
+    LOGF("TELEMETRY", "posting to %s payload=%s", TELEMETRY_URL, body.c_str());
+    int httpCode = http.POST(body);
+    LOGF("TELEMETRY", "status=%d", httpCode);
+    http.end();
+#else
+    (void)telemetry;
+    LOGF("TELEMETRY", "disabled (TELEMETRY_URL not defined)");
+#endif
+}
 
-            if (t > 0)
-            {
-                USE_SERIAL.printf("watering for %d seconds\n", t);
-                digitalWrite(PUMP_PIN, PUMP_ON);
-                Serial.print("pump stared\n");
-                delay(1000 * t);
-                digitalWrite(PUMP_PIN, PUMP_OFF);
-                Serial.print("pump stopped\n");
-            }
-        }
+#if WORK_OFFLINE
+void runLegacyOfflineCycle()
+{
+    LOGF("LEGACY", "offline cycle enabled");
+    readDeviceState();
+    performWatering(MANUAL_WATERING_DURATION_SEC);
+}
+#endif
+
+#if LEGACY_SERVER_POST_ENABLED
+void runLegacyServerControlledCycle()
+{
+    LOGF("LEGACY", "server-controlled cycle is still disabled in MVP");
+}
+#endif
+
+TelemetryPayload runRemoteScheduleCycle()
+{
+    TelemetryPayload telemetry;
+
+    readDeviceState();
+    applySleepIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
+
+    RemoteScheduleConfig config;
+    ParsedHttpDate dateHeader = {};
+    if (!fetchRemoteSchedule(config, dateHeader))
+    {
+        LOGF("SLEEP", "using fallback wakeupIntervalSec=%u", DEFAULT_WAKEUP_INTERVAL_SEC);
+        return telemetry;
+    }
+
+    // Build UTC timestamp string from parsed header for telemetry.
+    char tsBuf[32] = {0};
+    snprintf(tsBuf, sizeof(tsBuf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
+             dateHeader.year, dateHeader.month, dateHeader.day,
+             dateHeader.hour, dateHeader.minute, dateHeader.second);
+    telemetry.timestampUtc = String(tsBuf);
+    telemetry.ready = true;
+
+    applySleepIntervalSec(config.wakeupIntervalSec);
+    if (!config.enabled)
+    {
+        LOGF("SCHEDULE", "disabled by remote config");
+        return telemetry;
+    }
+
+    uint32_t currentLocalSecondOfDay = 0;
+    if (!localSecondOfDay(&dateHeader, config.timezoneOffsetSec, &currentLocalSecondOfDay))
+    {
+        LOGF("TIME", "failed to compute local second-of-day");
+        return telemetry;
+    }
+
+    LOGF("TIME", "localSecondOfDay=%lu", static_cast<unsigned long>(currentLocalSecondOfDay));
+
+    ScheduleDecision decision = decideWatering(
+        config.enabled,
+        currentLocalSecondOfDay,
+        config.wateringTimes,
+        config.wateringTimesCount,
+        config.wakeupIntervalSec,
+        config.wateringDurationSec);
+
+    if (decision.shouldWater)
+    {
+        LOGF("SCHEDULE", "due slotIndex=%d", decision.matchedSlotIndex);
+        performWatering(decision.durationSec);
+        telemetry.watered = true;
+        telemetry.wateringDurationSec = decision.durationSec;
     }
     else
     {
-        USE_SERIAL.printf("[HTTP] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        LOGF("SCHEDULE", "no slot due in current wake window");
     }
 
-    http.end();
+    return telemetry;
 }
+} // namespace
 
 void WateringDevice::setup()
 {
-    // Serial.begin(115200);
     USE_SERIAL.begin(115200);
-    // USE_SERIAL.setDebugOutput(true);
     USE_SERIAL.println();
     USE_SERIAL.println();
     USE_SERIAL.println();
-
-    drg.begin();
-
-    wifiSetup();
-
-    if (drg.detected())
-    {
-        Serial.println("Double reset detected, starting config web server...");
-        webServer.setup();
-
-        webServer.setOnClickWatering([]()
-            { 
-                watering = true; 
-            }
-        );
-
-        webServer.setOnMainPageLoad([]()
-            {
-                sleepingTimer.restart();
-                return deviceState; 
-            }
-        );
-
-        // Keepalive endpoint extends awake time while the UI is open.
-        webServer.setOnKeepAlive([]()
-            { 
-                sleepingTimer.restart(); 
-            }
-        );
-    }
-    else
-    {
-        Serial.println("Normal boot, regular work mode");
-        // обычный режим: синхронизация времени, работа, подготовка к sleep
-        // syncTimeFromNtp();
-    }
 
     wateringSetup();
-    sleepingTimer.start();
+    doubleResetGuard.begin();
+    wifiSetup();
 
-    timeClient.update();
+    if (doubleResetGuard.detected())
+    {
+        LOGF("BOOT", "double reset detected, starting temporary web server");
+        if (MDNS.begin("esp8266"))
+        {
+            LOGF("WEB", "mDNS responder started");
+        }
 
-    Serial.print(daysOfTheWeek[timeClient.getDay()]);
-    Serial.print(", ");
-    Serial.print(timeClient.getHours());
-    Serial.print(":");
-    Serial.print(timeClient.getMinutes());
-    Serial.print(":");
-    Serial.println(timeClient.getSeconds());
-    Serial.print("  ");
-    Serial.println(timeClient.getEpochTime());
+        webServerEnabled = true;
+        webServer.setup();
+        webServer.setOnClickWatering([]() {
+            manualWateringRequested = true;
+        });
+        webServer.setOnMainPageLoad([]() {
+            sleepingTimer.restart();
+            return deviceState;
+        });
+        webServer.setOnKeepAlive([]() {
+            sleepingTimer.restart();
+        });
+        sleepingTimer.setMilliseconds(WEB_SERVER_AWAKE_MS);
+        sleepingTimer.start();
+        return;
+    }
+
+#if WORK_OFFLINE
+    runLegacyOfflineCycle();
+    postTelemetry(TelemetryPayload{});
+#elif LEGACY_SERVER_POST_ENABLED
+    runLegacyServerControlledCycle();
+    postTelemetry(TelemetryPayload{});
+#else
+    {
+        TelemetryPayload telemetry = runRemoteScheduleCycle();
+        postTelemetry(telemetry);
+    }
+#endif
+
+    doubleResetGuard.disarm();
+    delay(1000);
+    LOGF("SLEEP", "intervalMicros=%llu", sleepIntervalMicros);
+    ESP.deepSleep(sleepIntervalMicros);
+    ESP.restart();
 }
 
 void WateringDevice::loop()
 {
-    if (watering)
+    if (!webServerEnabled)
     {
-        USE_SERIAL.printf("start watering\n");
+        return;
+    }
+
+    if (manualWateringRequested)
+    {
+        manualWateringRequested = false;
         sleepingTimer.cancel();
-        wateringLoop();
-        watering = false;
+        performWatering(MANUAL_WATERING_DURATION_SEC);
         sleepingTimer.start();
     }
-    drg.loop();
+
+    doubleResetGuard.loop();
     webServer.loop();
     MDNS.update();
     sleepingTimer.loop();
