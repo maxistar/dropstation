@@ -271,6 +271,9 @@ void postTelemetry(const TelemetryPayload &telemetry)
     root["watered"] = telemetry.watered;
     root["wateringDurationSec"] = static_cast<int>(telemetry.wateringDurationSec);
     root["timestampUtc"] = telemetry.timestampUtc;
+#ifdef FIRMWARE_VERSION
+    root["firmwareVersion"] = FIRMWARE_VERSION;
+#endif
 
     String body;
     root.printTo(body);

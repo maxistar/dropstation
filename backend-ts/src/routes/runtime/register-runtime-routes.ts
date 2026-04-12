@@ -71,6 +71,7 @@ export function registerRuntimeRoutes(
             watered: { type: "boolean" },
             wateringDurationSec: { type: "number" },
             timestampUtc: { type: "string" },
+            firmwareVersion: { type: "string" },
           },
         },
       },

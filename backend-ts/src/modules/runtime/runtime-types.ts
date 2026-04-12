@@ -54,6 +54,7 @@ export interface DeviceTelemetryPayload {
   watered: boolean;
   wateringDurationSec: number;
   timestampUtc: string;
+  firmwareVersion?: string;
 }
 
 export interface CanonicalEventRecord {

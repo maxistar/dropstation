@@ -159,13 +159,14 @@ export class RuntimeService {
           ) VALUES (
             ?, NULL, 'device_checkin', NOW(),
             ?, NULL, NULL, NULL, NULL, NULL, 'info',
-            JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?)
+            JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?, 'firmwareVersion', ?)
           )
         `,
         [
           `ev_telemetry_checkin_${device.id}_${Date.now()}`,
           device.id,
           payload.timestampUtc,
+          payload.firmwareVersion ?? null,
         ],
       );
 
