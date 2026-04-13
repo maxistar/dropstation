@@ -23,6 +23,8 @@ const size_t kMaxWateringSlots = 8;
 const size_t kDateHeaderCount = 1;
 const char *kCollectedHeaders[kDateHeaderCount] = {"Date"};
 const size_t kJsonBufferSize = 1024;
+const uint32_t kMinCycleIntervalSec = 60UL;
+const uint32_t kMaxCycleIntervalSec = 86400UL;
 
 WebServer webServer;
 DeviceState deviceState = {0, 0};
@@ -30,10 +32,15 @@ DoubleResetGuard doubleResetGuard(10000);
 bool manualWateringRequested = false;
 bool webServerEnabled = false;
 uint64_t sleepIntervalMicros = SLEEP_TIMEOUT;
+uint32_t cycleIntervalMs = DEFAULT_WAKEUP_INTERVAL_SEC * 1000UL;
+#ifdef SLEEP_DISABLED
+uint32_t lastCycleMs = 0;
+#endif
 
 #define USE_SERIAL Serial
 #define LOGF(tag, fmt, ...) USE_SERIAL.printf("[" tag "] " fmt "\n", ##__VA_ARGS__)
 
+#ifndef SLEEP_DISABLED
 Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
     doubleResetGuard.disarm();
     delay(1000);
@@ -41,6 +48,7 @@ Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
     ESP.deepSleep(sleepIntervalMicros);
     ESP.restart();
 });
+#endif
 
 struct TelemetryPayload
 {
@@ -60,10 +68,44 @@ struct RemoteScheduleConfig
     size_t wateringTimesCount = 0;
 };
 
-void applySleepIntervalSec(uint32_t intervalSec)
+struct CycleResult
 {
-    uint32_t safeIntervalSec = intervalSec == 0 ? DEFAULT_WAKEUP_INTERVAL_SEC : intervalSec;
+    TelemetryPayload telemetry;
+    uint32_t nextIntervalSec = DEFAULT_WAKEUP_INTERVAL_SEC;
+};
+
+uint32_t clampIntervalSec(uint32_t intervalSec)
+{
+    uint32_t candidateSec = intervalSec == 0 ? DEFAULT_WAKEUP_INTERVAL_SEC : intervalSec;
+    uint32_t clampedSec = candidateSec;
+
+    if (clampedSec < kMinCycleIntervalSec)
+    {
+        clampedSec = kMinCycleIntervalSec;
+    }
+
+    if (clampedSec > kMaxCycleIntervalSec)
+    {
+        clampedSec = kMaxCycleIntervalSec;
+    }
+
+    if (clampedSec != candidateSec)
+    {
+        LOGF(
+            "SCHEDULE",
+            "clamped wakeupIntervalSec from %lu to %lu",
+            static_cast<unsigned long>(candidateSec),
+            static_cast<unsigned long>(clampedSec));
+    }
+
+    return clampedSec;
+}
+
+void applyIntervalSec(uint32_t intervalSec)
+{
+    uint32_t safeIntervalSec = clampIntervalSec(intervalSec);
     sleepIntervalMicros = static_cast<uint64_t>(safeIntervalSec) * 1000000ULL;
+    cycleIntervalMs = safeIntervalSec * 1000UL;
 }
 
 int normaliseHumidityValue(int rawData)
@@ -115,12 +157,16 @@ void wateringSetup()
     digitalWrite(HUMIDITY_PIN, HUMIDITY_SENSOR_OFF);
 }
 
-void wifiSetup()
+bool connectToConfiguredWifi(bool logConnect)
 {
-    LOGF("BOOT", "starting device");
+#ifdef WIFI_NAME
+    if (logConnect)
+    {
+        LOGF("WIFI", "connecting to %s", WIFI_NAME);
+    }
+
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_NAME, WIFI_PASSWORD);
-    LOGF("WIFI", "connecting to %s", WIFI_NAME);
     while (WiFi.status() != WL_CONNECTED)
     {
         delay(500);
@@ -128,7 +174,81 @@ void wifiSetup()
     }
     USE_SERIAL.println();
     LOGF("WIFI", "connected ip=%s", WiFi.localIP().toString().c_str());
+    return true;
+#else
+    (void)logConnect;
+    LOGF("WIFI", "WIFI_NAME/WIFI_PASSWORD not defined");
+    return false;
+#endif
 }
+
+bool ensureWifiConnected()
+{
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        return true;
+    }
+
+    LOGF("WIFI", "disconnected, attempting reconnect");
+    return connectToConfiguredWifi(false);
+}
+
+void wifiSetup()
+{
+    LOGF("BOOT", "starting device");
+    connectToConfiguredWifi(true);
+}
+
+void maybeStartMdns()
+{
+    if (MDNS.begin("esp8266"))
+    {
+        LOGF("WEB", "mDNS responder started");
+    }
+}
+
+void configureCommonWebServerCallbacks()
+{
+    webServer.setOnClickWatering([]() {
+        manualWateringRequested = true;
+    });
+    webServer.setOnMainPageLoad([]() {
+        return deviceState;
+    });
+}
+
+#ifndef SLEEP_DISABLED
+void startTemporaryWebServer()
+{
+    LOGF("BOOT", "double reset detected, starting temporary web server");
+    maybeStartMdns();
+
+    webServerEnabled = true;
+    configureCommonWebServerCallbacks();
+    webServer.setOnMainPageLoad([]() {
+        sleepingTimer.restart();
+        return deviceState;
+    });
+    webServer.setOnKeepAlive([]() {
+        sleepingTimer.restart();
+    });
+    webServer.setup();
+    sleepingTimer.setMilliseconds(WEB_SERVER_AWAKE_MS);
+    sleepingTimer.start();
+}
+#endif
+
+#ifdef SLEEP_DISABLED
+void startAlwaysOnWebServer()
+{
+    LOGF("WEB", "starting always-on web server");
+    maybeStartMdns();
+
+    webServerEnabled = true;
+    configureCommonWebServerCallbacks();
+    webServer.setup();
+}
+#endif
 
 bool parseWateringTimes(JsonArray &times, RemoteScheduleConfig &config)
 {
@@ -304,19 +424,26 @@ void runLegacyServerControlledCycle()
 }
 #endif
 
-TelemetryPayload runRemoteScheduleCycle()
+CycleResult runScheduleCycle()
 {
-    TelemetryPayload telemetry;
+    CycleResult result;
 
     readDeviceState();
-    applySleepIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
+    applyIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
+    result.nextIntervalSec = clampIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
+
+    if (!ensureWifiConnected())
+    {
+        LOGF("SCHEDULE", "wifi unavailable, using fallback wakeupIntervalSec=%u", DEFAULT_WAKEUP_INTERVAL_SEC);
+        return result;
+    }
 
     RemoteScheduleConfig config;
     ParsedHttpDate dateHeader = {};
     if (!fetchRemoteSchedule(config, dateHeader))
     {
-        LOGF("SLEEP", "using fallback wakeupIntervalSec=%u", DEFAULT_WAKEUP_INTERVAL_SEC);
-        return telemetry;
+        LOGF("SCHEDULE", "using fallback wakeupIntervalSec=%u", DEFAULT_WAKEUP_INTERVAL_SEC);
+        return result;
     }
 
     // Build UTC timestamp string from parsed header for telemetry.
@@ -324,21 +451,22 @@ TelemetryPayload runRemoteScheduleCycle()
     snprintf(tsBuf, sizeof(tsBuf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
              dateHeader.year, dateHeader.month, dateHeader.day,
              dateHeader.hour, dateHeader.minute, dateHeader.second);
-    telemetry.timestampUtc = String(tsBuf);
-    telemetry.ready = true;
+    result.telemetry.timestampUtc = String(tsBuf);
+    result.telemetry.ready = true;
 
-    applySleepIntervalSec(config.wakeupIntervalSec);
+    result.nextIntervalSec = clampIntervalSec(config.wakeupIntervalSec);
+    applyIntervalSec(result.nextIntervalSec);
     if (!config.enabled)
     {
         LOGF("SCHEDULE", "disabled by remote config");
-        return telemetry;
+        return result;
     }
 
     uint32_t currentLocalSecondOfDay = 0;
     if (!localSecondOfDay(&dateHeader, config.timezoneOffsetSec, &currentLocalSecondOfDay))
     {
         LOGF("TIME", "failed to compute local second-of-day");
-        return telemetry;
+        return result;
     }
 
     LOGF("TIME", "localSecondOfDay=%lu", static_cast<unsigned long>(currentLocalSecondOfDay));
@@ -355,15 +483,15 @@ TelemetryPayload runRemoteScheduleCycle()
     {
         LOGF("SCHEDULE", "due slotIndex=%d", decision.matchedSlotIndex);
         performWatering(decision.durationSec);
-        telemetry.watered = true;
-        telemetry.wateringDurationSec = decision.durationSec;
+        result.telemetry.watered = true;
+        result.telemetry.wateringDurationSec = decision.durationSec;
     }
     else
     {
         LOGF("SCHEDULE", "no slot due in current wake window");
     }
 
-    return telemetry;
+    return result;
 }
 } // namespace
 
@@ -376,32 +504,27 @@ void WateringDevice::setup()
 
     wateringSetup();
     doubleResetGuard.begin();
+    applyIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
+
+#ifdef SLEEP_DISABLED
+    LOGF("BOOT", "mode=always-on");
+#else
+    LOGF("BOOT", "mode=sleepy");
+#endif
+
     wifiSetup();
 
+#ifndef SLEEP_DISABLED
     if (doubleResetGuard.detected())
     {
-        LOGF("BOOT", "double reset detected, starting temporary web server");
-        if (MDNS.begin("esp8266"))
-        {
-            LOGF("WEB", "mDNS responder started");
-        }
-
-        webServerEnabled = true;
-        webServer.setup();
-        webServer.setOnClickWatering([]() {
-            manualWateringRequested = true;
-        });
-        webServer.setOnMainPageLoad([]() {
-            sleepingTimer.restart();
-            return deviceState;
-        });
-        webServer.setOnKeepAlive([]() {
-            sleepingTimer.restart();
-        });
-        sleepingTimer.setMilliseconds(WEB_SERVER_AWAKE_MS);
-        sleepingTimer.start();
+        startTemporaryWebServer();
         return;
     }
+#else
+    startAlwaysOnWebServer();
+    lastCycleMs = millis() - cycleIntervalMs;
+    return;
+#endif
 
 #if WORK_OFFLINE
     runLegacyOfflineCycle();
@@ -411,8 +534,8 @@ void WateringDevice::setup()
     postTelemetry(TelemetryPayload{});
 #else
     {
-        TelemetryPayload telemetry = runRemoteScheduleCycle();
-        postTelemetry(telemetry);
+        CycleResult cycleResult = runScheduleCycle();
+        postTelemetry(cycleResult.telemetry);
     }
 #endif
 
@@ -425,6 +548,35 @@ void WateringDevice::setup()
 
 void WateringDevice::loop()
 {
+#ifdef SLEEP_DISABLED
+    if (manualWateringRequested)
+    {
+        manualWateringRequested = false;
+        performWatering(MANUAL_WATERING_DURATION_SEC);
+    }
+
+    if (millis() - lastCycleMs >= cycleIntervalMs)
+    {
+#if WORK_OFFLINE
+        runLegacyOfflineCycle();
+        postTelemetry(TelemetryPayload{});
+#elif LEGACY_SERVER_POST_ENABLED
+        runLegacyServerControlledCycle();
+        postTelemetry(TelemetryPayload{});
+#else
+        CycleResult cycleResult = runScheduleCycle();
+        postTelemetry(cycleResult.telemetry);
+#endif
+        lastCycleMs = millis();
+    }
+
+    if (webServerEnabled)
+    {
+        webServer.loop();
+        MDNS.update();
+    }
+    return;
+#else
     if (!webServerEnabled)
     {
         return;
@@ -442,4 +594,5 @@ void WateringDevice::loop()
     webServer.loop();
     MDNS.update();
     sleepingTimer.loop();
+#endif
 }

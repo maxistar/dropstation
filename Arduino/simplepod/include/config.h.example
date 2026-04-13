@@ -23,6 +23,11 @@
 #define MANUAL_WATERING_DURATION_SEC 10
 #define WEB_SERVER_AWAKE_MS 60000
 
+// Uncomment for mains-powered devices that should never deep-sleep.
+// In this mode the webserver runs permanently and the schedule cycle is driven by loop().
+// Do NOT define this for battery-powered devices.
+// #define SLEEP_DISABLED
+
 #define PUMP_PIN 12
 #define POWER_PIN 13
 #define HUMIDITY_PIN 14
