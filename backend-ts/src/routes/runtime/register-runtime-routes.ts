@@ -69,6 +69,7 @@ export function registerRuntimeRoutes(
             humidity: { type: "number" },
             battery: { type: "number" },
             watered: { type: "boolean" },
+            lightingOn: { type: "boolean" },
             wateringDurationSec: { type: "number" },
             timestampUtc: { type: "string" },
             firmwareVersion: { type: "string" },

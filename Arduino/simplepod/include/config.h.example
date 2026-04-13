@@ -28,6 +28,13 @@
 // Do NOT define this for battery-powered devices.
 // #define SLEEP_DISABLED
 
+// WS2812B lighting configuration for the lighting schedule feature.
+#define LED_PIN 5
+#define LED_COUNT 24
+#define LED_R 255
+#define LED_G 180
+#define LED_B 100
+
 #define PUMP_PIN 12
 #define POWER_PIN 13
 #define HUMIDITY_PIN 14

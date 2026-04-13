@@ -202,3 +202,35 @@ ScheduleDecision decideWatering(
 
     return decision;
 }
+
+LightingDecision decideLighting(
+    bool enabled,
+    uint32_t currentSecondOfDay,
+    const uint32_t *slotSeconds,
+    size_t slotCount,
+    uint32_t durationSec)
+{
+    LightingDecision decision = {false};
+
+    if (!enabled || slotSeconds == NULL || slotCount == 0 || durationSec == 0)
+    {
+        return decision;
+    }
+
+    for (size_t i = 0; i < slotCount; ++i)
+    {
+        if (currentSecondOfDay < slotSeconds[i])
+        {
+            continue;
+        }
+
+        uint32_t diff = currentSecondOfDay - slotSeconds[i];
+        if (diff <= durationSec)
+        {
+            decision.lightsOn = true;
+            return decision;
+        }
+    }
+
+    return decision;
+}

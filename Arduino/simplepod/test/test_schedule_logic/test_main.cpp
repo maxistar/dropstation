@@ -76,6 +76,48 @@ void test_decide_watering_disabled()
     TEST_ASSERT_FALSE(decision.shouldWater);
 }
 
+void test_decide_lighting_inside_single_slot()
+{
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(true, 27900U, slots, 1, 14400U);
+    TEST_ASSERT_TRUE(decision.lightsOn);
+}
+
+void test_decide_lighting_before_slot()
+{
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(true, 26999U, slots, 1, 14400U);
+    TEST_ASSERT_FALSE(decision.lightsOn);
+}
+
+void test_decide_lighting_after_slot()
+{
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(true, 41401U, slots, 1, 14400U);
+    TEST_ASSERT_FALSE(decision.lightsOn);
+}
+
+void test_decide_lighting_inside_second_slot()
+{
+    const uint32_t slots[] = {27000U, 68400U};
+    LightingDecision decision = decideLighting(true, 70200U, slots, 2, 14400U);
+    TEST_ASSERT_TRUE(decision.lightsOn);
+}
+
+void test_decide_lighting_between_slots()
+{
+    const uint32_t slots[] = {27000U, 68400U};
+    LightingDecision decision = decideLighting(true, 50000U, slots, 2, 14400U);
+    TEST_ASSERT_FALSE(decision.lightsOn);
+}
+
+void test_decide_lighting_disabled()
+{
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(false, 27900U, slots, 1, 14400U);
+    TEST_ASSERT_FALSE(decision.lightsOn);
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -88,5 +130,11 @@ int main(int argc, char **argv)
     RUN_TEST(test_decide_watering_due);
     RUN_TEST(test_decide_watering_not_due);
     RUN_TEST(test_decide_watering_disabled);
+    RUN_TEST(test_decide_lighting_inside_single_slot);
+    RUN_TEST(test_decide_lighting_before_slot);
+    RUN_TEST(test_decide_lighting_after_slot);
+    RUN_TEST(test_decide_lighting_inside_second_slot);
+    RUN_TEST(test_decide_lighting_between_slots);
+    RUN_TEST(test_decide_lighting_disabled);
     return UNITY_END();
 }

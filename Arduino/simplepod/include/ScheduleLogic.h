@@ -21,6 +21,11 @@ struct ScheduleDecision
     int matchedSlotIndex;
 };
 
+struct LightingDecision
+{
+    bool lightsOn;
+};
+
 bool parseTimeOfDay(const char *text, uint32_t *secondOfDay);
 bool parseHttpDateHeader(const char *header, ParsedHttpDate *out);
 bool localSecondOfDay(const ParsedHttpDate *utc, int32_t timezoneOffsetSec, uint32_t *secondOfDay);
@@ -31,5 +36,11 @@ ScheduleDecision decideWatering(
     size_t slotCount,
     uint32_t wakeupIntervalSec,
     uint16_t wateringDurationSec);
+LightingDecision decideLighting(
+    bool enabled,
+    uint32_t currentSecondOfDay,
+    const uint32_t *slotSeconds,
+    size_t slotCount,
+    uint32_t durationSec);
 
 #endif // SCHEDULE_LOGIC_H

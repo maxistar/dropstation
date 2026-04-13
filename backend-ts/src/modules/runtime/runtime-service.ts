@@ -159,7 +159,7 @@ export class RuntimeService {
           ) VALUES (
             ?, NULL, 'device_checkin', NOW(),
             ?, NULL, NULL, NULL, NULL, NULL, 'info',
-            JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?, 'firmwareVersion', ?)
+            JSON_OBJECT('source', 'telemetry', 'timestampUtc', ?, 'firmwareVersion', ?, 'lightingOn', ?)
           )
         `,
         [
@@ -167,6 +167,7 @@ export class RuntimeService {
           device.id,
           payload.timestampUtc,
           payload.firmwareVersion ?? null,
+          payload.lightingOn ?? null,
         ],
       );
 

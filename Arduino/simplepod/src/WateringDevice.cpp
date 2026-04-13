@@ -7,6 +7,7 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include <ArduinoJson.h>
+#include <FastLED.h>
 #include <memory>
 
 #include "config.h"
@@ -20,6 +21,7 @@ namespace
 {
 const uint32_t kSecondsPerDay = 86400UL;
 const size_t kMaxWateringSlots = 8;
+const size_t kMaxLightingSlots = 8;
 const size_t kDateHeaderCount = 1;
 const char *kCollectedHeaders[kDateHeaderCount] = {"Date"};
 const size_t kJsonBufferSize = 1024;
@@ -40,6 +42,28 @@ uint32_t lastCycleMs = 0;
 #define USE_SERIAL Serial
 #define LOGF(tag, fmt, ...) USE_SERIAL.printf("[" tag "] " fmt "\n", ##__VA_ARGS__)
 
+#ifndef LED_PIN
+#define LED_PIN 5
+#endif
+
+#ifndef LED_COUNT
+#define LED_COUNT 24
+#endif
+
+#ifndef LED_R
+#define LED_R 255
+#endif
+
+#ifndef LED_G
+#define LED_G 180
+#endif
+
+#ifndef LED_B
+#define LED_B 100
+#endif
+
+CRGB leds[LED_COUNT];
+
 #ifndef SLEEP_DISABLED
 Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
     doubleResetGuard.disarm();
@@ -54,6 +78,7 @@ struct TelemetryPayload
 {
     bool ready = false;
     bool watered = false;
+    bool lightingOn = false;
     uint16_t wateringDurationSec = 0;
     String timestampUtc;
 };
@@ -66,6 +91,10 @@ struct RemoteScheduleConfig
     uint16_t wateringDurationSec = 0;
     uint32_t wateringTimes[kMaxWateringSlots] = {0};
     size_t wateringTimesCount = 0;
+    bool lightingEnabled = false;
+    uint16_t lightingDurationSec = 0;
+    uint32_t lightingTimes[kMaxLightingSlots] = {0};
+    size_t lightingTimesCount = 0;
 };
 
 struct CycleResult
@@ -128,6 +157,20 @@ void performWatering(uint16_t durationSec)
     delay(1000UL * durationSec);
     digitalWrite(PUMP_PIN, PUMP_OFF);
     LOGF("WATER", "done");
+}
+
+void ledSetup()
+{
+    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
+    FastLED.clear(true);
+    LOGF("LIGHT", "configured pin=%d count=%d rgb=(%d,%d,%d)", LED_PIN, LED_COUNT, LED_R, LED_G, LED_B);
+}
+
+void setLeds(bool on)
+{
+    fill_solid(leds, LED_COUNT, on ? CRGB(LED_R, LED_G, LED_B) : CRGB::Black);
+    FastLED.show();
+    LOGF("LIGHT", "state=%s", on ? "on" : "off");
 }
 
 void readDeviceState()
@@ -278,6 +321,34 @@ bool parseWateringTimes(JsonArray &times, RemoteScheduleConfig &config)
     return config.wateringTimesCount > 0;
 }
 
+bool parseLightingTimes(JsonArray &times, RemoteScheduleConfig &config)
+{
+    config.lightingTimesCount = 0;
+
+    for (JsonArray::iterator it = times.begin(); it != times.end() && config.lightingTimesCount < kMaxLightingSlots; ++it)
+    {
+        const char *timeText = it->as<const char *>();
+        if (timeText == NULL)
+        {
+            continue;
+        }
+
+        uint32_t slotSecondOfDay = 0;
+        if (parseTimeOfDay(timeText, &slotSecondOfDay))
+        {
+            config.lightingTimes[config.lightingTimesCount] = slotSecondOfDay;
+            LOGF("CONFIG", "lightingSlot[%u]=%s", static_cast<unsigned>(config.lightingTimesCount), timeText);
+            config.lightingTimesCount += 1;
+        }
+        else
+        {
+            LOGF("CONFIG", "ignored invalid lighting slot=%s", timeText);
+        }
+    }
+
+    return config.lightingTimesCount > 0;
+}
+
 bool parseRemoteConfigJson(const String &payload, RemoteScheduleConfig &config)
 {
     StaticJsonBuffer<kJsonBufferSize> jsonBuffer;
@@ -292,30 +363,44 @@ bool parseRemoteConfigJson(const String &payload, RemoteScheduleConfig &config)
     config.timezoneOffsetSec = root.containsKey("timezoneOffsetSec") ? root["timezoneOffsetSec"].as<long>() : 0;
     config.wakeupIntervalSec = root.containsKey("wakeupIntervalSec") ? root["wakeupIntervalSec"].as<unsigned long>() : DEFAULT_WAKEUP_INTERVAL_SEC;
     config.wateringDurationSec = root.containsKey("wateringDurationSec") ? root["wateringDurationSec"].as<unsigned int>() : 0;
+    config.lightingEnabled = root.containsKey("lightingEnabled") ? root["lightingEnabled"].as<bool>() : false;
+    config.lightingDurationSec = root.containsKey("lightingDurationSec") ? root["lightingDurationSec"].as<unsigned int>() : 0;
 
-    if (!root.containsKey("wateringTimes"))
+    if (root.containsKey("wateringTimes"))
+    {
+        JsonArray &times = root["wateringTimes"].as<JsonArray &>();
+        if (!parseWateringTimes(times, config))
+        {
+            LOGF("CONFIG", "no valid watering times");
+        }
+    }
+    else
     {
         LOGF("CONFIG", "wateringTimes missing");
-        return false;
     }
 
-    JsonArray &times = root["wateringTimes"].as<JsonArray &>();
-    if (!parseWateringTimes(times, config))
+    if (root.containsKey("lightingTimes"))
     {
-        LOGF("CONFIG", "no valid watering times");
-        return false;
+        JsonArray &lightingTimes = root["lightingTimes"].as<JsonArray &>();
+        if (!parseLightingTimes(lightingTimes, config))
+        {
+            LOGF("CONFIG", "no valid lighting times");
+        }
     }
 
     LOGF(
         "CONFIG",
-        "enabled=%s timezoneOffsetSec=%ld wakeupIntervalSec=%lu wateringDurationSec=%u slots=%u",
+        "enabled=%s timezoneOffsetSec=%ld wakeupIntervalSec=%lu wateringDurationSec=%u slots=%u lightingEnabled=%s lightingDurationSec=%u lightingSlots=%u",
         config.enabled ? "true" : "false",
         static_cast<long>(config.timezoneOffsetSec),
         static_cast<unsigned long>(config.wakeupIntervalSec),
         config.wateringDurationSec,
-        static_cast<unsigned>(config.wateringTimesCount));
+        static_cast<unsigned>(config.wateringTimesCount),
+        config.lightingEnabled ? "true" : "false",
+        config.lightingDurationSec,
+        static_cast<unsigned>(config.lightingTimesCount));
 
-    return true;
+    return config.wateringTimesCount > 0 || config.lightingTimesCount > 0;
 }
 
 bool fetchRemoteSchedule(RemoteScheduleConfig &config, ParsedHttpDate &dateHeader)
@@ -389,6 +474,7 @@ void postTelemetry(const TelemetryPayload &telemetry)
     root["humidity"] = deviceState.humidityValue;
     root["battery"] = deviceState.powerValue;
     root["watered"] = telemetry.watered;
+    root["lightingOn"] = telemetry.lightingOn;
     root["wateringDurationSec"] = static_cast<int>(telemetry.wateringDurationSec);
     root["timestampUtc"] = telemetry.timestampUtc;
 #ifdef FIRMWARE_VERSION
@@ -456,12 +542,6 @@ CycleResult runScheduleCycle()
 
     result.nextIntervalSec = clampIntervalSec(config.wakeupIntervalSec);
     applyIntervalSec(result.nextIntervalSec);
-    if (!config.enabled)
-    {
-        LOGF("SCHEDULE", "disabled by remote config");
-        return result;
-    }
-
     uint32_t currentLocalSecondOfDay = 0;
     if (!localSecondOfDay(&dateHeader, config.timezoneOffsetSec, &currentLocalSecondOfDay))
     {
@@ -491,6 +571,15 @@ CycleResult runScheduleCycle()
         LOGF("SCHEDULE", "no slot due in current wake window");
     }
 
+    LightingDecision lightingDecision = decideLighting(
+        config.lightingEnabled,
+        currentLocalSecondOfDay,
+        config.lightingTimes,
+        config.lightingTimesCount,
+        config.lightingDurationSec);
+    setLeds(lightingDecision.lightsOn);
+    result.telemetry.lightingOn = lightingDecision.lightsOn;
+
     return result;
 }
 } // namespace
@@ -503,6 +592,7 @@ void WateringDevice::setup()
     USE_SERIAL.println();
 
     wateringSetup();
+    ledSetup();
     doubleResetGuard.begin();
     applyIntervalSec(DEFAULT_WAKEUP_INTERVAL_SEC);
 
