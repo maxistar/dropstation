@@ -118,6 +118,22 @@ void test_decide_lighting_disabled()
     TEST_ASSERT_FALSE(decision.lightsOn);
 }
 
+void test_decide_lighting_at_exact_slot_end()
+{
+    // diff == durationSec exactly: boundary is inclusive (lights ON)
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(true, 41400U, slots, 1, 14400U);
+    TEST_ASSERT_TRUE(decision.lightsOn);
+}
+
+void test_decide_lighting_one_past_slot_end()
+{
+    // diff == durationSec + 1: boundary exceeded (lights OFF)
+    const uint32_t slots[] = {27000U};
+    LightingDecision decision = decideLighting(true, 41401U, slots, 1, 14400U);
+    TEST_ASSERT_FALSE(decision.lightsOn);
+}
+
 int main(int argc, char **argv)
 {
     UNITY_BEGIN();
@@ -136,5 +152,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_decide_lighting_inside_second_slot);
     RUN_TEST(test_decide_lighting_between_slots);
     RUN_TEST(test_decide_lighting_disabled);
+    RUN_TEST(test_decide_lighting_at_exact_slot_end);
+    RUN_TEST(test_decide_lighting_one_past_slot_end);
     return UNITY_END();
 }

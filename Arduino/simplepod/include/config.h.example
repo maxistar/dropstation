@@ -13,6 +13,10 @@
 // Unique key for this device. Used to identify telemetry reports on the backend.
 #define DEVICE_KEY "rose-desk"
 
+// Uncomment if this device has WS2812B LEDs connected.
+// Without this flag ledSetup() and setLeds() are no-ops — safe for watering-only devices.
+// #define LED_ENABLED
+
 // Optional: POST telemetry after each wake cycle. Remove or leave empty to disable.
 #define TELEMETRY_URL "https://your-backend.example.com/api/device/v1/telemetry"
 

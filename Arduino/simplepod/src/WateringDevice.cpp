@@ -7,7 +7,9 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include <ArduinoJson.h>
+#ifdef LED_ENABLED
 #include <FastLED.h>
+#endif
 #include <memory>
 
 #include "config.h"
@@ -27,7 +29,9 @@ const char *kCollectedHeaders[kDateHeaderCount] = {"Date"};
 const size_t kJsonBufferSize = 1024;
 const uint32_t kMinCycleIntervalSec = 60UL;
 const uint32_t kMaxCycleIntervalSec = 86400UL;
+#ifdef LED_ENABLED
 const uint8_t kLedShowDelayMs = 10;
+#endif
 
 WebServer webServer;
 DeviceState deviceState = {0, 0};
@@ -42,6 +46,8 @@ uint32_t lastCycleMs = 0;
 
 #define USE_SERIAL Serial
 #define LOGF(tag, fmt, ...) USE_SERIAL.printf("[" tag "] " fmt "\n", ##__VA_ARGS__)
+
+#ifdef LED_ENABLED
 
 #ifndef LED_PIN
 #define LED_PIN 5
@@ -64,6 +70,8 @@ uint32_t lastCycleMs = 0;
 #endif
 
 CRGB leds[LED_COUNT];
+
+#endif // LED_ENABLED
 
 #ifndef SLEEP_DISABLED
 Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
@@ -163,9 +171,10 @@ void performWatering(uint16_t durationSec)
     LOGF("WATER", "done");
 }
 
+#ifdef LED_ENABLED
 void ledSetup()
 {
-    FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, LED_COUNT);
+    FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, LED_COUNT);
     FastLED.clear(true);
     LOGF("LIGHT", "configured pin=%d count=%d rgb=(%d,%d,%d)", LED_PIN, LED_COUNT, LED_R, LED_G, LED_B);
 }
@@ -177,6 +186,10 @@ void setLeds(bool on)
     FastLED.delay(kLedShowDelayMs);
     LOGF("LIGHT", "state=%s", on ? "on" : "off");
 }
+#else
+void ledSetup() {}
+void setLeds(bool on) { (void)on; }
+#endif // LED_ENABLED
 
 void readDeviceState()
 {
@@ -405,7 +418,9 @@ bool parseRemoteConfigJson(const String &payload, RemoteScheduleConfig &config)
         config.lightingDurationSec,
         static_cast<unsigned>(config.lightingTimesCount));
 
-    return config.wateringTimesCount > 0 || config.lightingTimesCount > 0;
+    // Return true as long as JSON is valid — wakeupIntervalSec must always be applied
+    // even if no schedules are configured yet.
+    return true;
 }
 
 bool fetchRemoteSchedule(RemoteScheduleConfig &config, ParsedHttpDate &dateHeader)
@@ -415,6 +430,7 @@ bool fetchRemoteSchedule(RemoteScheduleConfig &config, ParsedHttpDate &dateHeade
     client->setInsecure();
     http.collectHeaders(kCollectedHeaders, kDateHeaderCount);
 
+    http.setTimeout(3000);
     LOGF("HTTP", "requesting %s", REMOTE_CONFIG_URL);
     if (!http.begin(*client, REMOTE_CONFIG_URL))
     {
