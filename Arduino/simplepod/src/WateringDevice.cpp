@@ -7,7 +7,6 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecureBearSSL.h>
 #include <ArduinoJson.h>
-#define FASTLED_ALLOW_INTERRUPTS 0
 #include <FastLED.h>
 #include <memory>
 
@@ -28,6 +27,7 @@ const char *kCollectedHeaders[kDateHeaderCount] = {"Date"};
 const size_t kJsonBufferSize = 1024;
 const uint32_t kMinCycleIntervalSec = 60UL;
 const uint32_t kMaxCycleIntervalSec = 86400UL;
+const uint8_t kLedShowDelayMs = 10;
 
 WebServer webServer;
 DeviceState deviceState = {0, 0};
@@ -51,10 +51,6 @@ uint32_t lastCycleMs = 0;
 #define LED_COUNT 24
 #endif
 
-#ifndef LED_BRIGHTNESS
-#define LED_BRIGHTNESS 64
-#endif
-
 #ifndef LED_R
 #define LED_R 255
 #endif
@@ -68,7 +64,6 @@ uint32_t lastCycleMs = 0;
 #endif
 
 CRGB leds[LED_COUNT];
-uint8_t diagnosticHue = 0;
 
 #ifndef SLEEP_DISABLED
 Timer sleepingTimer(WEB_SERVER_AWAKE_MS, []() {
@@ -108,6 +103,9 @@ struct CycleResult
     TelemetryPayload telemetry;
     uint32_t nextIntervalSec = DEFAULT_WAKEUP_INTERVAL_SEC;
 };
+
+bool connectToConfiguredWifi(bool logConnect);
+void maybeStartMdns();
 
 uint32_t clampIntervalSec(uint32_t intervalSec)
 {
@@ -167,42 +165,17 @@ void performWatering(uint16_t durationSec)
 
 void ledSetup()
 {
-    delay(3000);
-    FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, LED_COUNT).setCorrection(TypicalLEDStrip);
-    FastLED.setBrightness(LED_BRIGHTNESS);
-    //FastLED.clear(true);
-    LOGF(
-        "LIGHT",
-        "configured pin=%d count=%d brightness=%d rgb=(%d,%d,%d)",
-        LED_PIN,
-        LED_COUNT,
-        LED_BRIGHTNESS,
-        LED_R,
-        LED_G,
-        LED_B);
+    FastLED.addLeds<WS2811, LED_PIN, GRB>(leds, LED_COUNT);
+    FastLED.clear(true);
+    LOGF("LIGHT", "configured pin=%d count=%d rgb=(%d,%d,%d)", LED_PIN, LED_COUNT, LED_R, LED_G, LED_B);
 }
 
 void setLeds(bool on)
 {
     fill_solid(leds, LED_COUNT, on ? CRGB(LED_R, LED_G, LED_B) : CRGB::Black);
     FastLED.show();
+    FastLED.delay(kLedShowDelayMs);
     LOGF("LIGHT", "state=%s", on ? "on" : "off");
-}
-
-void runLedDiagnosticSetup()
-{
-    ledSetup();
-    fill_solid(leds, LED_COUNT, CRGB::Black);
-    FastLED.show();
-    LOGF("LIGHT", "diagnostic mode enabled");
-}
-
-void runLedDiagnosticLoop()
-{
-    fill_rainbow(leds, LED_COUNT, diagnosticHue, 7);
-    FastLED.show();
-    diagnosticHue += 1;
-    FastLED.delay(10);
 }
 
 void readDeviceState()
@@ -623,12 +596,6 @@ void WateringDevice::setup()
     USE_SERIAL.println();
     USE_SERIAL.println();
 
-#ifdef LED_DIAGNOSTIC_ONLY
-    LOGF("BOOT", "mode=led-diagnostic");
-    runLedDiagnosticSetup();
-    return;
-#endif
-
     wateringSetup();
     ledSetup();
     doubleResetGuard.begin();
@@ -676,10 +643,6 @@ void WateringDevice::setup()
 
 void WateringDevice::loop()
 {
-#ifdef LED_DIAGNOSTIC_ONLY
-    runLedDiagnosticLoop();
-    return;
-#endif
 #ifdef SLEEP_DISABLED
     if (manualWateringRequested)
     {

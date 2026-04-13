@@ -31,14 +31,9 @@
 // WS2812B lighting configuration for the lighting schedule feature.
 #define LED_PIN 5
 #define LED_COUNT 24
-#define LED_BRIGHTNESS 64
 #define LED_R 255
 #define LED_G 180
 #define LED_B 100
-
-// Temporary LED-only diagnostic mode. Uncomment to bypass Wi-Fi, sensors, watering,
-// webserver, and schedule logic and run a standalone LED test loop instead.
-// #define LED_DIAGNOSTIC_ONLY
 
 #define PUMP_PIN 12
 #define POWER_PIN 13
