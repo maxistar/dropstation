@@ -4,7 +4,7 @@
   ],
   "require": {
     "etherra/core":"dev-master",
-    "phpunit/phpunit": "~8.5"
+    "phpunit/phpunit": "~12.5"
   },
   "autoload": {
     "psr-0": {
