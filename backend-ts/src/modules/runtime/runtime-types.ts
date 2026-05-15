@@ -47,6 +47,17 @@ export interface RuntimeScheduleRecord {
   enabled: number;
 }
 
+export interface DeviceTelemetryPayload {
+  deviceKey: string;
+  humidity: number;
+  battery: number;
+  watered: boolean;
+  lightingOn?: boolean;
+  wateringDurationSec: number;
+  timestampUtc: string;
+  firmwareVersion?: string;
+}
+
 export interface CanonicalEventRecord {
   id: number;
   externalId: string;

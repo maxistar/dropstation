@@ -1,20 +1,16 @@
-import { mount } from '@vue/test-utils'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, it, expect, vi } from 'vitest'
-import IndexPage from '../../pages/index.vue'
+import IndexPage from '../../../pages/index.vue'
 import { afterEach } from 'node:test'
-import { createTestingPinia } from '@pinia/testing'
 
 describe('IndexPage', () => {
     afterEach(() => {
         vi.unstubAllGlobals()
     })
-    it('renders the home page', () => {
+    it('renders the home page', async () => {
 
         expect(IndexPage).toBeTruthy()
-        const pinia = createTestingPinia({
-            createSpy: vi.fn,
-          })
-        const wrapper = mount(IndexPage)
+        const wrapper = await mountSuspended(IndexPage)
         expect(wrapper.html()).not.toContain('Login')
         // const wrapper = mount(IndexPage, {
         //     global: {

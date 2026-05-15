@@ -1,6 +1,6 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { it, expect, describe } from 'vitest'
-import PlaceItem from '../../components/PlaceItem.vue'
+import PlaceItem from '../../../components/PlaceItem.vue'
 
 describe('PlaceItem', () => {
   it('can mount the component', async () => {

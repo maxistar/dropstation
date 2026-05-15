@@ -22,15 +22,15 @@
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "devDependencies": {
-    "@nuxt/test-utils": "^3.14.1",
+    "@nuxt/test-utils": "^3.21.0",
     "@nuxt/types": "^2.18.1",
     "@nuxt/typescript-build": "^3.0.2",
     "@pinia/testing": "^0.1.5",
     "@types/node": "^22.0.0",
     "@vue/test-utils": "^2.4.6",
-    "happy-dom": "^15.7.3",
+    "happy-dom": "^20.8.9",
     "playwright-core": "^1.46.1",
     "vite-plugin-vuetify": "^2.0.4",
-    "vitest": "^2.0.5"
+    "vitest": "^3.2.4"
   }
 }

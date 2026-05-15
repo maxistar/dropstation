@@ -1,0 +1,54 @@
+name: PlatformIO CI (Arduino/simplepod)
+
+on:
+  push:
+    branches: ["dev", "master"]
+    paths:
+      - "Arduino/simplepod/**"
+      - ".github/workflows/platformio-simplepod.yml"
+  pull_request:
+    paths:
+      - "Arduino/simplepod/**"
+      - ".github/workflows/platformio-simplepod.yml"
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [esp8266]
+
+    defaults:
+      run:
+        working-directory: Arduino/simplepod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Run native schedule logic tests
+        run: pio test -e native
+
+      - name: Prepare local config
+        run: cp include/config.h.example include/config.h
+
+      - name: Build ${{ matrix.env }}
+        run: pio run -e ${{ matrix.env }}
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: simplepod-${{ matrix.env }}
+          path: |
+            Arduino/simplepod/.pio/build/${{ matrix.env }}/firmware.bin
+            Arduino/simplepod/.pio/build/${{ matrix.env }}/firmware.elf
+          if-no-files-found: warn

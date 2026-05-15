@@ -43,8 +43,8 @@ void Timer::restart() {
 
 // Check if the timer has elapsed and invoke the callback once.
 void Timer::loop() {
-    if (this->triggerValue != 0 && this->triggerValue < millis()) {
-        this->triggerValue == 0;
+    if (this->triggerValue != 0 && static_cast<unsigned long>(this->triggerValue) < millis()) {
+        this->triggerValue = 0;
         USE_SERIAL.printf("trigger value %ld, current time %ld\n", this->triggerValue, millis());
         this->onTimerCallback();
     }
